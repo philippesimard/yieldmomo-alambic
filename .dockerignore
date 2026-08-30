@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+.npm-cache
+**/dist
+.git
+.env
+.env.*
+*.md
+.DS_Store

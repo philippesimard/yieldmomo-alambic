@@ -1,0 +1,18 @@
+node_modules/
+.npm-cache/
+dist/
+*.tsbuildinfo
+
+# Environnement (ne jamais commiter de secrets)
+.env
+.env.*
+!.env.local.exemple
+!.env.production.exemple
+
+# Systeme
+.DS_Store
+*.local
+
+# Config Claude Code propre au poste (le motif *.local ne l'attrape pas : le suffixe
+# est .json). launch.json reste suivi : il decrit comment lancer le projet.
+.claude/settings.local.json
