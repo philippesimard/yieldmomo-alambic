@@ -1,8 +1,8 @@
 import { Worker } from 'node:worker_threads'
-import { CODE_ERREUR, type Distillation, ErreurAlambic } from '@alambic/noyau'
+import { CODE_ERREUR, type Distillation, ErreurAlambic, type EvenementTrace } from '@alambic/noyau'
 import { env } from '../config/env'
 import { journal } from '../journal'
-import type { DemandeOuvrier, ReponseOuvrier } from './messages'
+import { type DemandeOuvrier, GENRE_MESSAGE, type MessageOuvrier } from './messages'
 
 // Le bootstrap .mjs, et non ouvrier.ts directement : voir l'explication dans ce fichier. tsx
 // est pour cette raison une dependance de production, pas un outil de developpement.
@@ -25,6 +25,8 @@ const PROFONDEUR_FILE_PAR_OUVRIER = 2
 type Promesse = {
   resoudre: (distillation: Distillation) => void
   rejeter: (erreur: unknown) => void
+  // Absent : l'ouvrier ne trace rien. C'est ce qui garde l'observation hors du chemin ordinaire.
+  surEvenement?: (evenement: EvenementTrace) => void
 }
 
 type Ouvrier = {
@@ -64,7 +66,10 @@ export async function arreterAtelier(): Promise<void> {
   ouvriers = []
 }
 
-export function distillerDansAtelier(image: Buffer): Promise<Distillation> {
+export function distillerDansAtelier(
+  image: Buffer,
+  surEvenement?: (evenement: EvenementTrace) => void,
+): Promise<Distillation> {
   if (arretDemande || ouvriers.length === 0) {
     return Promise.reject(
       new ErreurAlambic(CODE_ERREUR.surcharge, 503, 'Aucun ouvrier disponible.'),
@@ -81,7 +86,7 @@ export function distillerDansAtelier(image: Buffer): Promise<Distillation> {
   }
 
   return new Promise<Distillation>((resoudre, rejeter) => {
-    attente.push({ image: detacher(image), resoudre, rejeter })
+    attente.push({ image: detacher(image), resoudre, rejeter, surEvenement })
     servirAttente()
   })
 }
@@ -126,22 +131,38 @@ function affecter(ouvrier: Ouvrier, tache: Promesse & { image: ArrayBuffer }): v
     void ouvrier.worker.terminate()
   }, env.DELAI_DISTILLATION_MS)
 
-  ouvrier.tache = { resoudre: tache.resoudre, rejeter: tache.rejeter, minuterie }
+  ouvrier.tache = {
+    resoudre: tache.resoudre,
+    rejeter: tache.rejeter,
+    surEvenement: tache.surEvenement,
+    minuterie,
+  }
   // transferList : sans elle, postMessage recopierait plusieurs megaoctets a chaque requete.
-  ouvrier.worker.postMessage({ image: tache.image } satisfies DemandeOuvrier, [tache.image])
+  ouvrier.worker.postMessage(
+    { image: tache.image, trace: tache.surEvenement !== undefined } satisfies DemandeOuvrier,
+    [tache.image],
+  )
 }
 
 function creerOuvrier(): Ouvrier {
   const ouvrier: Ouvrier = { worker: new Worker(CHEMIN_OUVRIER), tache: null }
 
-  ouvrier.worker.on('message', (reponse: ReponseOuvrier) => {
+  ouvrier.worker.on('message', (message: MessageOuvrier) => {
     const tache = ouvrier.tache
     if (tache === null) return
+
+    // Une trace n'acheve rien : l'ouvrier travaille encore, sa minuterie reste armee et il ne
+    // redevient pas disponible.
+    if (message.genre === GENRE_MESSAGE.trace) {
+      tache.surEvenement?.(message.evenement)
+      return
+    }
+
     clearTimeout(tache.minuterie)
     ouvrier.tache = null
 
-    if (reponse.ok) tache.resoudre(reponse.distillation)
-    else tache.rejeter(new ErreurAlambic(reponse.code, reponse.statut, reponse.message))
+    if (message.genre === GENRE_MESSAGE.fin) tache.resoudre(message.distillation)
+    else tache.rejeter(new ErreurAlambic(message.code, message.statut, message.message))
 
     servirAttente()
   })

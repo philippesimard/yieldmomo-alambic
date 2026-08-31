@@ -7,3 +7,8 @@ node_modules
 .env.*
 *.md
 .DS_Store
+
+# Outil de developpement, jamais monte en production : la garde NODE_ENV de serveur.ts ne
+# l'importe pas, et `npm ci --omit=dev` n'installe pas ses dependances. L'exclure ici enleve
+# aussi son code et sa page de l'image.
+packages/hublot

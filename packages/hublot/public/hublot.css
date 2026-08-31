@@ -1,0 +1,1319 @@
+:root {
+  --fond: #f4f4f5;
+  --carte: #ffffff;
+  --carte-2: #fafafa;
+  --sunk: #ededef;
+  --bord: #e0e0e3;
+  --bord-fort: #b9b9c0;
+
+  --texte: #09090b;
+  --texte-2: #52525b;
+  --texte-3: #71717a;
+
+  --plein: #09090b;
+  --plein-texte: #ffffff;
+  --accent: #0060d6;
+  --accent-doux: #e4f0ff;
+
+  /* Teinte de statut. `-plein` porte la pastille et la barre, `-` le texte : deux valeurs
+     parce qu'une couleur lisible sur blanc est trop sombre pour un aplat, et l'inverse. */
+  --attente: #71717a;
+  --attente-plein: #c0c0c7;
+  --cours: #0060d6;
+  --cours-plein: #0070f3;
+  --reussi: #067a45;
+  --reussi-plein: #10a65b;
+  --degrade: #a85803;
+  --degrade-plein: #f0930b;
+  --erreur: #c2262b;
+  --erreur-plein: #e5484d;
+
+  --attente-fond: #ededef;
+  --cours-fond: #e4f0ff;
+  --reussi-fond: #d9f5e5;
+  --degrade-fond: #fdeecc;
+  --erreur-fond: #fde0e0;
+
+  --attente-bord: #d8d8dc;
+  --cours-bord: #a9cffa;
+  --reussi-bord: #90dfb4;
+  --degrade-bord: #f1ce84;
+  --erreur-bord: #f5b5b5;
+
+  --sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --r-carte: 12px;
+  --r-champ: 8px;
+  --r-pilule: 999px;
+
+  --ombre: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --ombre-haut: 0 2px 4px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #000000;
+    --carte: #0c0c0f;
+    --carte-2: #141418;
+    --sunk: #1b1b20;
+    --bord: #2f2f36;
+    --bord-fort: #4a4a54;
+
+    --texte: #fafafa;
+    --texte-2: #b7b7c0;
+    --texte-3: #8a8a95;
+
+    --plein: #fafafa;
+    --plein-texte: #09090b;
+    --accent: #5aacff;
+    --accent-doux: #0d2b44;
+
+    --attente: #8a8a95;
+    --attente-plein: #4a4a54;
+    --cours: #5aacff;
+    --cours-plein: #2b8ef5;
+    --reussi: #4ade80;
+    --reussi-plein: #16a34a;
+    --degrade: #fbbf24;
+    --degrade-plein: #d97706;
+    --erreur: #ff8085;
+    --erreur-plein: #dc2626;
+
+    --attente-fond: #1b1b20;
+    --cours-fond: #0d2b44;
+    --reussi-fond: #0c2e1c;
+    --degrade-fond: #33240a;
+    --erreur-fond: #37171a;
+
+    --attente-bord: #3a3a42;
+    --cours-bord: #1a5687;
+    --reussi-bord: #1a5e38;
+    --degrade-bord: #6a4a12;
+    --erreur-bord: #6b2a2e;
+
+    --ombre: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --ombre-haut: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme="dark"] {
+  --fond: #000000;
+  --carte: #0c0c0f;
+  --carte-2: #141418;
+  --sunk: #1b1b20;
+  --bord: #2f2f36;
+  --bord-fort: #4a4a54;
+
+  --texte: #fafafa;
+  --texte-2: #b7b7c0;
+  --texte-3: #8a8a95;
+
+  --plein: #fafafa;
+  --plein-texte: #09090b;
+  --accent: #5aacff;
+  --accent-doux: #0d2b44;
+
+  --attente: #8a8a95;
+  --attente-plein: #4a4a54;
+  --cours: #5aacff;
+  --cours-plein: #2b8ef5;
+  --reussi: #4ade80;
+  --reussi-plein: #16a34a;
+  --degrade: #fbbf24;
+  --degrade-plein: #d97706;
+  --erreur: #ff8085;
+  --erreur-plein: #dc2626;
+
+  --attente-fond: #1b1b20;
+  --cours-fond: #0d2b44;
+  --reussi-fond: #0c2e1c;
+  --degrade-fond: #33240a;
+  --erreur-fond: #37171a;
+
+  --attente-bord: #3a3a42;
+  --cours-bord: #1a5687;
+  --reussi-bord: #1a5e38;
+  --degrade-bord: #6a4a12;
+  --erreur-bord: #6b2a2e;
+
+  --ombre: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --ombre-haut: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.006em;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.chiffre {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════ en-tete ═══════════════ */
+
+.entete {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 0 24px;
+  height: 60px;
+  background: var(--carte);
+  border-bottom: 1px solid var(--bord);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.marque {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.sceau {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--plein);
+  color: var(--plein-texte);
+  font-size: 13px;
+}
+
+.marque em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--texte-3);
+  padding: 2px 7px;
+  border: 1px solid var(--bord);
+  border-radius: var(--r-pilule);
+}
+
+.fanions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fanion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pilule);
+  border: 1px solid var(--degrade-bord);
+  background: var(--degrade-fond);
+  color: var(--degrade);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.fanion::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.fanion.neutre {
+  border-color: var(--bord);
+  background: var(--carte-2);
+  color: var(--texte-2);
+}
+
+/* ═══════════════ barre d'action ═══════════════ */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  background: var(--carte);
+  border-bottom: 1px solid var(--bord);
+  position: sticky;
+  top: 60px;
+  z-index: 29;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+
+.actions.survol {
+  background: var(--accent-doux);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.source {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 7px 12px 7px 10px;
+  border: 1px solid var(--bord);
+  border-radius: var(--r-champ);
+  background: var(--carte-2);
+  cursor: pointer;
+  max-width: 420px;
+  flex: 1 1 260px;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.source:hover {
+  border-color: var(--bord-fort);
+}
+
+.source-icone {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 6px;
+  background: var(--sunk);
+  color: var(--texte-2);
+}
+
+.source-texte {
+  min-width: 0;
+  flex: 1;
+}
+
+.source-nom {
+  display: block;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-note {
+  display: block;
+  font-size: 11.5px;
+  color: var(--texte-3);
+}
+
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border: 1px solid var(--plein);
+  border-radius: var(--r-champ);
+  background: var(--plein);
+  color: var(--plein-texte);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
+}
+
+.bouton:hover:not(:disabled) {
+  opacity: 0.82;
+}
+
+.bouton.discret {
+  background: var(--carte);
+  color: var(--texte);
+  border-color: var(--bord-fort);
+}
+
+.bouton.discret:hover:not(:disabled) {
+  background: var(--sunk);
+  opacity: 1;
+}
+
+.bouton:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.segmente {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  margin-left: auto;
+  border: 1px solid var(--bord);
+  border-radius: var(--r-champ);
+  background: var(--carte-2);
+}
+
+.segment {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--texte-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.segment:hover {
+  color: var(--texte);
+}
+
+.segment[aria-pressed="true"] {
+  background: var(--carte);
+  color: var(--texte);
+  box-shadow: var(--ombre);
+}
+
+/* ═══════════════ mise en page ═══════════════ */
+
+.plan {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-tete {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.section-titre {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.section-note {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--texte-3);
+  margin-left: auto;
+}
+
+/* ═══════════════ jauge de synthese ═══════════════ */
+
+/* Une case par sous-etape, dans l'ordre du flux : le verdict global de la distillation
+   tient en une bande de 9 cases, lisible d'un coup d'oeil a deux metres. */
+.jauge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.cases {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.case {
+  flex: 1;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--attente-fond);
+  box-shadow: inset 0 0 0 1px var(--attente-bord);
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
+}
+
+.case[data-statut="en_cours"] {
+  background: var(--cours-plein);
+  box-shadow: none;
+  animation: palpiter 1.1s ease-in-out infinite;
+}
+.case[data-statut="reussi"] {
+  background: var(--reussi-plein);
+  box-shadow: none;
+}
+.case[data-statut="degrade"] {
+  background: var(--degrade-plein);
+  box-shadow: none;
+}
+.case[data-statut="en_erreur"] {
+  background: var(--erreur-plein);
+  box-shadow: none;
+}
+
+@keyframes palpiter {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.comptes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.compte {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--texte-2);
+}
+
+.compte b {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--texte);
+}
+
+.pastille-legende {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--attente-plein);
+}
+
+.compte[data-statut="reussi"] .pastille-legende {
+  background: var(--reussi-plein);
+}
+.compte[data-statut="degrade"] .pastille-legende {
+  background: var(--degrade-plein);
+}
+.compte[data-statut="en_erreur"] .pastille-legende {
+  background: var(--erreur-plein);
+}
+
+.compte[data-statut="degrade"] b {
+  color: var(--degrade);
+}
+.compte[data-statut="en_erreur"] b {
+  color: var(--erreur);
+}
+
+/* ═══════════════ le pipeline, en heros ═══════════════ */
+
+/* Une carte par etape du plan, puis le produit qui ferme le rail : il n'est pas une etape,
+   mais ce que la derniere d'entre elles fabrique, place la ou l'oeil l'attend.
+   FLEX et non GRID : le nombre de colonnes n'est connu qu'a l'execution, et un
+   grid-template-columns fige au nombre d'etapes serait a reecrire a la prochaine. */
+.rail {
+  display: flex;
+  align-items: stretch;
+}
+
+/* `flex: 1 1 0` : toutes les cartes se partagent la largeur a parts egales, qu'il y en ait
+   trois ou dix. `min-width: 0` sans quoi un nom long empecherait la carte de retrecir. */
+.etape {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--bord);
+  border-radius: var(--r-carte);
+  background: var(--carte);
+  box-shadow: var(--ombre);
+  overflow: hidden;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+/* Bande de statut : la couleur de l'etape se lit avant meme d'avoir lu son nom. */
+.bande {
+  height: 4px;
+  background: var(--attente-plein);
+  transition: background 0.25s;
+}
+
+.etape-tete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 10px;
+}
+
+/* capitalize plutot qu'un libelle affichable de plus dans le plan : le nom d'une etape vient
+   du pipeline tel qu'il s'y ecrit, et la page n'a pas a en porter un second. */
+.etape-nom {
+  text-transform: capitalize;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  flex: 1;
+}
+
+.etape-chiffres {
+  display: flex;
+  gap: 14px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--bord);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte-3);
+}
+
+.etape-chiffres b {
+  color: var(--texte-2);
+  font-weight: 500;
+}
+
+.sous-etapes {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sous-etape {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--r-champ);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.sous-etape:hover:not(:disabled) {
+  background: var(--sunk);
+}
+
+/* La selection passe par un lisere, pas par un fond : une ligne deja teintee par son
+   verdict garde sa couleur, et reste selectionnable de facon visible. */
+.sous-etape[aria-current="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+li[data-statut="reussi"] > .sous-etape[aria-current="true"],
+li[data-statut="en_attente"] > .sous-etape[aria-current="true"] {
+  background: var(--accent-doux);
+}
+
+.sous-etape:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* Une pastille pleine PORTANT UNE ICONE, pas un simple point colore : le verdict d'une
+   sous-etape doit se lire sans avoir a distinguer deux teintes voisines. */
+.puce {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--attente-plein);
+  color: #ffffff;
+  flex: none;
+  transition: background 0.25s;
+}
+
+.puce svg {
+  display: block;
+}
+
+/* `creuse` et non `vide` : `.vide` designe deja l'etat vide d'un panneau, avec son padding
+   de 44px — une puce qui aurait porte les deux classes en aurait herite. */
+.puce.creuse {
+  background: transparent;
+  border: 1.5px dashed var(--attente-bord);
+}
+
+.puce.tourne {
+  background: transparent;
+  border: 2px solid var(--cours-bord);
+  border-top-color: var(--cours-plein);
+  animation: tourner 0.7s linear infinite;
+}
+
+@keyframes tourner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sous-nom {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--texte-2);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sous-ms {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte-3);
+}
+
+/* Marge horizontale nulle et memes retraits internes que `.sous-etape` : le message occupe
+   exactement la largeur de la ligne qu'il commente, et son texte tombe sous le nom. */
+.motif {
+  display: flex;
+  gap: 9px;
+  margin: 2px 0 6px;
+  padding: 9px 10px;
+  border: 1px solid var(--degrade-bord);
+  border-radius: var(--r-champ);
+  background: var(--degrade-fond);
+  color: var(--degrade);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.motif.grave {
+  border-color: var(--erreur-bord);
+  background: var(--erreur-fond);
+  color: var(--erreur);
+}
+
+/* Meme gabarit que `.puce`, pour que le texte demarre a la meme abscisse. */
+.motif svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+}
+
+/* connecteur entre deux etapes */
+
+.flux {
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.flux::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--bord-fort);
+}
+
+.flux svg {
+  position: relative;
+  color: var(--texte-3);
+  background: var(--fond);
+  padding: 3px 2px;
+  transition: color 0.25s;
+}
+
+.flux[data-actif="true"] svg {
+  color: var(--reussi);
+}
+
+/* ═══════════════ statuts ═══════════════ */
+
+.etape[data-statut="en_attente"] .bande {
+  background: var(--attente-plein);
+}
+.etape[data-statut="en_cours"] .bande {
+  background: var(--cours-plein);
+}
+.etape[data-statut="reussi"] .bande {
+  background: var(--reussi-plein);
+}
+.etape[data-statut="degrade"] .bande {
+  background: var(--degrade-plein);
+}
+.etape[data-statut="en_erreur"] .bande {
+  background: var(--erreur-plein);
+}
+
+/* La carte entiere prend la teinte de son verdict : bordure coloree et en-tete teinte.
+   A distance, on sait quelle etape va mal sans lire un seul mot. */
+.etape[data-statut="en_cours"] {
+  border-color: var(--cours-bord);
+  box-shadow: var(--ombre-haut);
+}
+.etape[data-statut="reussi"] {
+  border-color: var(--reussi-bord);
+}
+.etape[data-statut="degrade"] {
+  border-color: var(--degrade-bord);
+}
+.etape[data-statut="en_erreur"] {
+  border-color: var(--erreur-bord);
+  box-shadow: var(--ombre-haut);
+}
+
+.etape[data-statut="degrade"] .etape-tete,
+.etape[data-statut="degrade"] .etape-chiffres {
+  background: var(--degrade-fond);
+}
+.etape[data-statut="en_erreur"] .etape-tete,
+.etape[data-statut="en_erreur"] .etape-chiffres {
+  background: var(--erreur-fond);
+}
+.etape[data-statut="en_cours"] .etape-tete,
+.etape[data-statut="en_cours"] .etape-chiffres {
+  background: var(--cours-fond);
+}
+
+li[data-statut="en_attente"] .puce {
+  background: var(--attente-plein);
+}
+li[data-statut="reussi"] .puce {
+  background: var(--reussi-plein);
+}
+li[data-statut="degrade"] .puce {
+  background: var(--degrade-plein);
+}
+li[data-statut="en_erreur"] .puce {
+  background: var(--erreur-plein);
+}
+
+/* La ligne fautive se teinte en entier, pas seulement sa pastille. */
+li[data-statut="degrade"] > .sous-etape {
+  background: var(--degrade-fond);
+}
+li[data-statut="en_erreur"] > .sous-etape {
+  background: var(--erreur-fond);
+}
+li[data-statut="degrade"] > .sous-etape:hover {
+  background: color-mix(in srgb, var(--degrade-plein) 18%, var(--carte));
+}
+li[data-statut="en_erreur"] > .sous-etape:hover {
+  background: color-mix(in srgb, var(--erreur-plein) 18%, var(--carte));
+}
+
+li[data-statut="degrade"] .sous-nom {
+  color: var(--degrade);
+}
+li[data-statut="en_erreur"] .sous-nom {
+  color: var(--erreur);
+}
+
+li[data-statut="reussi"] .sous-nom,
+li[data-statut="en_cours"] .sous-nom {
+  color: var(--texte);
+}
+
+li[data-statut="degrade"] .sous-ms {
+  color: var(--degrade);
+}
+li[data-statut="en_erreur"] .sous-ms {
+  color: var(--erreur);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .puce.tourne {
+    animation: none;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 7px;
+  border-radius: var(--r-pilule);
+  border: 1px solid var(--attente-bord);
+  background: var(--attente-fond);
+  color: var(--attente);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge svg {
+  display: block;
+}
+
+.badge[data-statut="en_cours"] {
+  border-color: var(--cours-bord);
+  background: var(--cours-fond);
+  color: var(--cours);
+}
+.badge[data-statut="reussi"] {
+  border-color: var(--reussi-bord);
+  background: var(--reussi-fond);
+  color: var(--reussi);
+}
+
+/* Les deux verdicts qui demandent une action passent en aplat plein : ils doivent gagner
+   la competition visuelle contre les etapes qui vont bien. */
+.badge[data-statut="degrade"] {
+  border-color: var(--degrade-plein);
+  background: var(--degrade-plein);
+  color: #ffffff;
+}
+
+.badge[data-statut="en_erreur"] {
+  border-color: var(--erreur-plein);
+  background: var(--erreur-plein);
+  color: #ffffff;
+}
+
+/* ═══════════════ la sortie de la sous-etape ═══════════════ */
+
+/* Apercu et json cote a cote : deux formes d'une meme chose, ce que l'etape a produit.
+   Les separer obligeait a chercher en bas de page le json de ce qu'on regardait en haut. */
+.sortie {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.carte {
+  border: 1px solid var(--bord);
+  border-radius: var(--r-carte);
+  background: var(--carte);
+  box-shadow: var(--ombre);
+  overflow: hidden;
+}
+
+.carte-tete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--bord);
+  background: var(--carte-2);
+}
+
+.carte-titre {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-right: auto;
+}
+
+.carte-note {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--texte-3);
+}
+
+.carte-corps {
+  padding: 16px;
+}
+
+.vide {
+  padding: 44px 24px;
+  text-align: center;
+  color: var(--texte-3);
+}
+
+.vide strong {
+  display: block;
+  color: var(--texte-2);
+  font-weight: 500;
+  font-size: 13px;
+}
+.vide p {
+  margin: 6px auto 0;
+  max-width: 40ch;
+  font-size: 12.5px;
+}
+
+/* apercu */
+
+.planche {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border: 1px solid var(--bord);
+  border-radius: var(--r-champ);
+  background: var(--sunk);
+  overflow: hidden;
+  line-height: 0;
+  cursor: zoom-in;
+}
+
+.planche img {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  width: auto;
+  height: auto;
+}
+
+.cadres {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cadre {
+  position: absolute;
+  border: 1px solid var(--cours);
+  background: color-mix(in srgb, var(--cours) 15%, transparent);
+  border-radius: 1px;
+  pointer-events: auto;
+  cursor: help;
+}
+
+.cadre:hover {
+  background: color-mix(in srgb, var(--cours) 38%, transparent);
+}
+
+.meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.jeton-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--bord);
+  border-radius: var(--r-pilule);
+  background: var(--carte-2);
+  font-size: 11.5px;
+  color: var(--texte-3);
+}
+
+.jeton-meta b {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte);
+}
+
+/* chrono */
+
+.chrono {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chrono-ligne {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 12px;
+}
+
+.chrono-nom {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--texte);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chrono-piste {
+  height: 8px;
+  background: var(--sunk);
+  border-radius: var(--r-pilule);
+  overflow: hidden;
+}
+
+.chrono-part {
+  height: 100%;
+  background: var(--texte-3);
+  border-radius: var(--r-pilule);
+  transition: width 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.chrono-ligne.secondaire .chrono-nom {
+  padding-left: 14px;
+  color: var(--texte-2);
+  font-weight: 400;
+}
+.chrono-ligne.secondaire .chrono-piste {
+  height: 6px;
+}
+
+.chrono-ms {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--texte-2);
+}
+
+/* La barre porte la couleur du verdict : on voit du meme coup ce qui coute cher ET ce qui
+   va mal. Une barre longue et ambre est exactement ce qu'on cherche a optimiser. */
+.chrono-ligne[data-statut="reussi"] .chrono-part {
+  background: var(--reussi-plein);
+}
+.chrono-ligne[data-statut="degrade"] .chrono-part {
+  background: var(--degrade-plein);
+}
+.chrono-ligne[data-statut="en_erreur"] .chrono-part {
+  background: var(--erreur-plein);
+}
+.chrono-ligne[data-statut="en_cours"] .chrono-part {
+  background: var(--cours-plein);
+}
+
+.chrono-ligne[data-statut="degrade"] .chrono-nom,
+.chrono-ligne[data-statut="degrade"] .chrono-ms {
+  color: var(--degrade);
+}
+.chrono-ligne[data-statut="en_erreur"] .chrono-nom,
+.chrono-ligne[data-statut="en_erreur"] .chrono-ms {
+  color: var(--erreur);
+}
+
+.chrono-ligne.actif .chrono-nom {
+  font-weight: 600;
+}
+
+.chrono-ligne.actif .chrono-piste {
+  box-shadow:
+    0 0 0 2px var(--accent-doux),
+    0 0 0 3px var(--accent);
+}
+
+.chrono-pied {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bord);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte-3);
+}
+
+.chrono-pied b {
+  color: var(--texte);
+  font-weight: 500;
+}
+
+/* Le produit du pipeline, derniere carte du rail. La grille affiche les cles de l'objet
+   recu, quelles qu'elles soient : elle ne sait pas ce qu'elle montre, et c'est voulu.
+   Un peu plus etroite que les etapes : elle liste, elle ne detaille pas. */
+
+.produit-grille {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0;
+  margin: 0;
+  font-size: 12.5px;
+}
+
+/* Le titre du produit est une phrase ecrite dans le plan, pas un identifiant : il se lit tel
+   quel, sans capitale posee sur chacun de ses mots. */
+.etape.produit .etape-nom {
+  text-transform: none;
+}
+
+.etape.produit {
+  flex: 0.9 1 0;
+}
+
+.etape.produit .produit-grille {
+  padding: 4px 16px 14px;
+}
+
+.produit-grille dt,
+.produit-grille dd {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--bord);
+}
+
+.produit-grille dt {
+  font-family: var(--mono);
+  color: var(--texte-2);
+}
+
+.produit-grille dd {
+  margin: 0;
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.produit-grille dt:nth-last-of-type(1),
+.produit-grille dd:nth-last-of-type(1) {
+  border-bottom: 0;
+}
+
+.nul {
+  color: var(--texte-3);
+}
+.reconnu {
+  color: var(--reussi);
+  font-weight: 500;
+}
+
+/* json */
+
+pre.donnees {
+  margin: 0;
+  padding: 14px 16px;
+  max-height: 300px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--texte-2);
+  background: var(--carte);
+  tab-size: 2;
+}
+
+.cle {
+  color: var(--accent);
+}
+.txt {
+  color: var(--reussi);
+}
+.num {
+  color: var(--degrade);
+}
+
+.copier {
+  padding: 4px 10px;
+  border: 1px solid var(--bord-fort);
+  border-radius: 6px;
+  background: var(--carte);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.copier:hover:not(:disabled) {
+  background: var(--sunk);
+}
+
+.copier:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Le produit tant que la distillation n'a pas abouti : la carte garde sa place dans le rail
+   plutot que d'apparaitre a la fin, ce qui ferait sauter toute la mise en page. */
+.produit-attente {
+  margin: 0;
+  padding: 14px 16px 18px;
+  color: var(--texte-3);
+  font-size: 12.5px;
+}
+
+/* loupe */
+
+.loupe {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 40px;
+  background: color-mix(in srgb, var(--fond) 82%, transparent);
+  backdrop-filter: blur(6px);
+  cursor: zoom-out;
+}
+
+.loupe.ouverte {
+  display: flex;
+}
+
+/* Le defilement appartient a la loupe, jamais a la planche : les cadres ocr sont positionnes
+   par rapport a elle, et une planche qui defile les laisserait derriere. */
+.loupe .planche {
+  margin: auto;
+  box-shadow: var(--ombre-haut);
+  cursor: zoom-out;
+}
+
+.loupe .planche img {
+  max-height: none;
+  height: auto;
+}
+
+@media (max-width: 1080px) {
+  .sortie {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .rail {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .flux {
+    display: none;
+  }
+  .plan {
+    padding: 16px;
+  }
+  .actions {
+    position: static;
+  }
+}
+
+/* `display: flex` bat l'attribut `hidden` a specificite egale : cette regle vient en dernier
+   pour que tout element masquable le soit vraiment, sans avoir a le prevoir classe par
+   classe. */
+[hidden] {
+  display: none;
+}

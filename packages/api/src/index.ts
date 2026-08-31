@@ -6,7 +6,7 @@ import { construireServeur } from './serveur'
 // qui pend finit tue par SIGKILL, sans trace de ce qui bloquait.
 const DELAI_ARRET_MS = 10_000
 
-const app = construireServeur()
+const app = await construireServeur()
 
 // L'atelier AVANT l'ecoute : accepter du trafic avant que les ouvriers soient la, c'est
 // repondre 503 aux premieres requetes de chaque deploiement.

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alambic DEV TOOLS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6 1.8v3.4L2.6 12A1.6 1.6 0 0 0 4 14.4h8A1.6 1.6 0 0 0 13.4 12L10 5.2V1.8M5.2 1.8h5.6M4.6 9.4h6.8' fill='none' stroke='%2309090B' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="hublot.css">
+</head>
+<body>
+
+<header class="entete">
+  <div class="marque">
+    <span class="sceau" aria-hidden="true">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 1.8v3.4L2.6 12A1.6 1.6 0 0 0 4 14.4h8A1.6 1.6 0 0 0 13.4 12L10 5.2V1.8"></path>
+        <path d="M5.2 1.8h5.6M4.6 9.4h6.8"></path>
+      </svg>
+    </span>
+    Alambic
+    <em>dev tools</em>
+  </div>
+  <!-- Rempli depuis plan.fanions : la page ne sait pas d'avance ce qu'il y a a signaler. -->
+  <div class="fanions" id="fanions"></div>
+</header>
+
+<!-- La barre entiere est la cible du glisser-deposer. -->
+<div class="actions" id="actions">
+  <!-- Sans `accept` : deposer un fichier qui n'est pas une image pour voir OU le pipeline le
+       refuse est un usage legitime de l'outil. -->
+  <input type="file" id="fichier" hidden>
+
+  <button class="source" id="source" type="button">
+    <span class="source-icone" aria-hidden="true">
+      <svg aria-hidden="true" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1.8" y="2.8" width="12.4" height="10.4" rx="1.8"></rect>
+        <circle cx="5.6" cy="6.4" r="1.1"></circle>
+        <path d="M2.2 11.4 5.8 8.2l2.6 2.3 2.4-1.9 3 2.6"></path>
+      </svg>
+    </span>
+    <span class="source-texte">
+      <span class="source-nom" id="source-nom">Choisir ou déposer une image</span>
+      <span class="source-note" id="source-note">jpeg · png · webp — 15 Mo max</span>
+    </span>
+  </button>
+
+  <button class="bouton" id="distiller" type="button" disabled>
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.6a.7.7 0 0 1 1.06-.6l7 5.4a.7.7 0 0 1 0 1.2l-7 5.4a.7.7 0 0 1-1.06-.6z"></path></svg>
+    Distiller
+  </button>
+  <button class="bouton discret" id="relancer" type="button" disabled>Relancer</button>
+</div>
+
+<main class="plan">
+  <section>
+    <div class="section-tete">
+      <h2 class="section-titre">Pipeline</h2>
+      <span class="section-note" id="pipeline-note"></span>
+    </div>
+    <div class="jauge">
+      <div class="cases" id="cases" role="img" aria-label="Avancement des sous-étapes"></div>
+      <div class="comptes" id="comptes"></div>
+    </div>
+    <div class="rail" id="rail"></div>
+  </section>
+
+  <section>
+    <div class="section-tete">
+      <h2 class="section-titre">Sortie</h2>
+      <span class="section-note" id="sortie-cible">aucune sous-étape sélectionnée</span>
+      <span class="badge" id="sortie-badge" data-statut="en_attente">En attente</span>
+    </div>
+    <div class="sortie">
+      <div class="carte">
+        <div class="carte-tete">
+          <span class="carte-titre">Aperçu</span>
+          <span class="carte-note" id="apercu-note"></span>
+        </div>
+        <div class="carte-corps" id="apercu-corps"></div>
+      </div>
+
+      <div class="carte">
+        <div class="carte-tete">
+          <span class="carte-titre">Sortie brute</span>
+          <span class="carte-note" id="json-cible">—</span>
+          <button class="copier" id="copier" type="button">Copier</button>
+        </div>
+        <pre class="donnees" id="json"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-tete">
+      <h2 class="section-titre">Répartition du temps</h2>
+      <span class="section-note" id="chrono-note"></span>
+    </div>
+    <div class="carte">
+      <div class="carte-corps" id="chrono-corps"></div>
+    </div>
+  </section>
+</main>
+
+<div class="loupe" id="loupe" role="dialog" aria-label="Aperçu agrandi"></div>
+
+<script type="module" src="hublot.js"></script>
+</body>
+</html>

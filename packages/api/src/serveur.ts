@@ -10,7 +10,9 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
-import { env } from './config/env'
+import { distillerDansAtelier } from './atelier/atelier'
+import { ENVIRONNEMENT, env } from './config/env'
+import { PLAN_PIPELINE } from './distiller'
 import { journal } from './journal'
 import { routeDistiller } from './routes/distiller'
 import { routeSante } from './routes/sante'
@@ -18,7 +20,7 @@ import { routeSante } from './routes/sante'
 // Filet global contre le martelage. La route de distillation resserre la maille par-dessus.
 const LIMITE_GLOBALE = { max: 100, timeWindow: '1 minute' }
 
-export function construireServeur() {
+export async function construireServeur() {
   const app = Fastify({
     // L'instance pino partagee (voir journal.ts) : le meme pipeline sert aussi l'atelier.
     loggerInstance: journal,
@@ -106,6 +108,22 @@ export function construireServeur() {
 
   app.register(routeSante)
   app.register(routeDistiller)
+
+  // Le hublot n'existe qu'en developpement : c'est une devDependency, absente de l'image docker
+  // (`npm ci --omit=dev`). L'import est donc dynamique et sous garde — jamais evalue en
+  // production. La garde et l'omission se couvrent l'une l'autre.
+  if (env.NODE_ENV !== ENVIRONNEMENT.production) {
+    const { routesHublot } = await import('@alambic/hublot')
+    app.register(routesHublot, {
+      plan: PLAN_PIPELINE,
+      // L'adaptation vit ici, chez le seul qui connaisse les deux cotes : le hublot recoit un
+      // produit anonyme, et n'a donc rien a savoir de ce que le pipeline fabrique.
+      distiller: async (image, surEvenement) => {
+        const { facture, mesures } = await distillerDansAtelier(image, surEvenement)
+        return { produit: facture, mesures }
+      },
+    })
+  }
 
   return app
 }

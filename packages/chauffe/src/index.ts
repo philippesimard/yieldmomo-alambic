@@ -1,1 +1,1 @@
-export { chauffer, LARGEUR_CIBLE } from './chauffe'
+export { chauffer, LARGEUR_CIBLE, SOUS_ETAPES_CHAUFFE } from './chauffe'

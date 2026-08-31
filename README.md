@@ -35,6 +35,7 @@ Deux packages les servent :
 |---|---|
 | [`packages/noyau`](packages/noyau) | Les contrats partagés — le seul que les étapes ont le droit de connaître |
 | [`packages/api`](packages/api) | Le serveur Fastify et l'atelier de workers |
+| [`packages/hublot`](packages/hublot) | Voir travailler le pipeline — **développement uniquement** |
 
 **Aucune étape n'importe une autre étape.** Elles se parlent uniquement à travers les formes
 définies dans le noyau, et c'est l'API qui les enchaîne. Cette séparation n'est pas une
@@ -90,6 +91,19 @@ que l'appelant sache quoi faire confirmer à l'utilisateur.
 > **État actuel :** le squelette tourne de bout en bout, mais la Condensation utilise un moteur
 > OCR **factice** et la Collecte ne reconnaît que le total. C'est délibéré : chaque étape sera
 > travaillée séparément, et le vrai moteur se choisira sur mesures.
+
+## Voir travailler le pipeline
+
+En développement, `npm run dev` monte aussi le **hublot** : une page qui montre chaque étape, ses
+sous-étapes, ce que chacune a produit et ce qu'elle a coûté.
+
+```bash
+open http://localhost:3100/hublot
+```
+
+C'est l'outil avec lequel les étapes se conçoivent — on y juge un seuillage, des cadres OCR ou une
+reconnaissance sur de vraies photos. Il n'existe jamais en production : voir
+[`packages/hublot`](packages/hublot).
 
 ## Erreurs
 
