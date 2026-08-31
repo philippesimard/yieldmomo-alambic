@@ -59,6 +59,7 @@ export async function distiller(original: Buffer, tracage?: Tracage): Promise<Di
     facture,
     mesures: {
       octets: original.byteLength,
+      qualite: image.qualite,
       chauffeMs: arrondir(debutCondensation - debutChauffe),
       condensationMs: arrondir(debutCollecte - debutCondensation),
       collecteMs: arrondir(fin - debutCollecte),

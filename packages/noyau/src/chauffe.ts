@@ -15,4 +15,7 @@ export type ImageChauffee = {
   largeur: number
   hauteur: number
   format: FormatImage
+  // Entre 0 et 1 : ce que la Chauffe pense de la lisibilite de ce qu'elle rend. La Condensation
+  // n'a pas a redecouvrir qu'une image est limite alors que la Chauffe vient de le mesurer.
+  qualite: number
 }

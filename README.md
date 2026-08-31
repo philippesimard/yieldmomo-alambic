@@ -25,7 +25,7 @@ précède ni celle qui la suit.
 
 | Étape | Package | Rôle |
 |---|---|---|
-| **Chauffe** | [`packages/chauffe`](packages/chauffe) | Rendre l'image lisible : orientation, contraste, échelle |
+| **Chauffe** | [`packages/chauffe`](packages/chauffe) | Rendre l'image lisible : redresser, aplanir, binariser, recadrer |
 | **Condensation** | [`packages/condensation`](packages/condensation) | Extraire tout le texte, avec sa position |
 | **Collecte** | [`packages/collecte`](packages/collecte) | Interpréter ce texte en facture |
 
@@ -118,6 +118,7 @@ logs. C'est au consommateur de traduire pour l'utilisateur.
 | `format_non_supporte` | 400 | Le fichier n'est pas une image |
 | `image_illisible` | 400 | Fichier tronqué ou format inconnu |
 | `image_trop_lourde` | 413 | Au-delà de `TAILLE_MAX_IMAGE` |
+| `image_trop_floue` | 422 | Photo trop floue pour être lue — reprendre la photo |
 | `aucun_texte` | 422 | Rien de lisible sur l'image — reprendre la photo |
 | `delai_depasse` | 504 | La distillation a dépassé `DELAI_DISTILLATION_MS` |
 | `surcharge` | 429 / 503 | Trop de requêtes, ou plus aucun ouvrier disponible |
@@ -131,6 +132,12 @@ npm run dev
 
 ```bash
 npm run typecheck
+```
+
+Calibrer la Chauffe sur un dossier de photos (voir [`packages/chauffe`](packages/chauffe)) :
+
+```bash
+npm run banc -- corpus
 ```
 
 ```bash

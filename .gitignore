@@ -16,3 +16,7 @@ dist/
 # Config Claude Code propre au poste (le motif *.local ne l'attrape pas : le suffixe
 # est .json). launch.json reste suivi : il decrit comment lancer le projet.
 .claude/settings.local.json
+
+# Corpus de calibration : des photos de vrais recus, souvent personnelles, parfois lourdes.
+# Le banc s'en sert pour caler les seuils de la Chauffe ; elles ne se versionnent pas.
+corpus/

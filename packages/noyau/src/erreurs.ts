@@ -10,6 +10,7 @@ export const CODE_ERREUR = {
   formatNonSupporte: 'format_non_supporte',
   imageIllisible: 'image_illisible',
   imageTropLourde: 'image_trop_lourde',
+  imageTropFloue: 'image_trop_floue',
   aucunTexte: 'aucun_texte',
   delaiDepasse: 'delai_depasse',
   surcharge: 'surcharge',

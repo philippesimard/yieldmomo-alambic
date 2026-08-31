@@ -13,9 +13,10 @@
     "dev": "npm run dev --workspace=packages/api",
     "start": "npm run start --workspace=packages/api",
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p outils/tsconfig.json --noEmit",
     "check": "biome check .",
-    "check:fix": "biome check --write ."
+    "check:fix": "biome check --write .",
+    "banc": "tsx outils/banc.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
