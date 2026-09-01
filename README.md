@@ -74,25 +74,35 @@ Réponse :
 
 ```json
 {
-  "marchand": null,
-  "date": null,
-  "devise": null,
-  "sousTotal": null,
-  "taxes": [],
-  "total": { "valeur": 8.91, "confiance": 0.9 },
-  "articles": []
+  "marchand": { "valeur": "DEPANNEUR DU COIN", "confiance": 0.68 },
+  "date": { "valeur": "2026-08-28", "confiance": 0.88 },
+  "devise": { "valeur": "CAD", "confiance": 0.39 },
+  "sousTotal": { "valeur": 22.99, "confiance": 0.93 },
+  "taxes": [
+    { "nom": "TPS", "taux": 0.05, "montant": 1.15, "confiance": 0.91 },
+    { "nom": "TVQ", "taux": 0.09975, "montant": 2.29, "confiance": 0.9 }
+  ],
+  "total": { "valeur": 26.43, "confiance": 0.95 },
+  "carte": { "valeur": "visa", "confiance": 0.87 },
+  "articles": [
+    { "libelle": "Cafe filtre moyen", "quantite": null, "prixUnitaire": null, "montant": 3.25, "confiance": 0.9 }
+  ]
 }
 ```
 
 Tous les champs sont nullables : une photo froissée peut ne livrer qu'un total, et rendre une
 facture partielle vaut mieux que refuser la requête. Chaque champ porte sa **confiance**, pour
-que l'appelant sache quoi faire confirmer à l'utilisateur.
+que l'appelant sache quoi faire confirmer à l'utilisateur. `carte` est le réseau de la carte de
+paiement, normalisé (`visa`, `mastercard`, `amex`, `interac`, `autre`) — `null` si comptant ou
+illisible.
 
-> **État actuel :** la Condensation lit avec un vrai moteur — **PaddleOCR** (PP-OCRv5) dans un
-> sidecar Python, activé par `MOTEUR_OCR=paddleocr` (voir
-> [`packages/condensation`](packages/condensation) pour l'installer ; sans lui, le moteur
-> **factice** reste le défaut en développement). La Collecte, elle, ne reconnaît encore que le
-> total : c'est la prochaine étape.
+> **État actuel :** la Condensation lit avec **PaddleOCR** (PP-OCRv5) et la Collecte structure
+> avec **LayoutLMv3** (token classification, checkpoint CORD zero-shot) — chacun dans son
+> sidecar Python, activés par `MOTEUR_OCR=paddleocr` et `MOTEUR_COLLECTE=layoutlmv3` (voir
+> [`packages/condensation`](packages/condensation) et [`packages/collecte`](packages/collecte)
+> pour installer les venvs ; sans eux, les moteurs **factices** restent le défaut en
+> développement). Le fine-tuning sur un corpus annoté maison est la prochaine étape ; le banc de
+> collecte exporte déjà les prédictions dans un format ré-annotable.
 
 ## Voir travailler le pipeline
 
@@ -122,9 +132,9 @@ logs. C'est au consommateur de traduire pour l'utilisateur.
 | `image_trop_lourde` | 413 | Au-delà de `TAILLE_MAX_IMAGE` |
 | `image_trop_floue` | 422 | Photo trop floue pour être lue — reprendre la photo |
 | `aucun_texte` | 422 | Rien de lisible sur l'image — reprendre la photo |
-| `delai_depasse` | 504 | La distillation a dépassé `DELAI_DISTILLATION_MS`, ou le moteur OCR `DELAI_OCR_MS` |
+| `delai_depasse` | 504 | La distillation a dépassé `DELAI_DISTILLATION_MS`, ou un moteur son plafond (`DELAI_OCR_MS`, `DELAI_COLLECTE_MS`) |
 | `surcharge` | 429 / 503 | Trop de requêtes, ou plus aucun ouvrier disponible |
-| `moteur_indisponible` | 503 | Le moteur OCR (sidecar) ne répond pas — réessayer plus tard |
+| `moteur_indisponible` | 503 | Un moteur du pipeline (sidecar OCR ou collecte) ne répond pas — réessayer plus tard |
 | `erreur_interne` | 500 | Panne — le détail reste dans les logs |
 
 ## Commandes
@@ -148,6 +158,13 @@ Mesurer la Condensation sur le même corpus (voir
 
 ```bash
 npm run banc:condensation -- corpus
+```
+
+Mesurer la Collecte sur le pipeline complet, et exporter les prédictions ré-annotables (voir
+[`packages/collecte`](packages/collecte)) :
+
+```bash
+npm run banc:collecte -- corpus
 ```
 
 ```bash

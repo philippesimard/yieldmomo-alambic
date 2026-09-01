@@ -29,11 +29,28 @@ export const DETECTION_OCR = {
 
 export type DetectionOcr = (typeof DETECTION_OCR)[keyof typeof DETECTION_OCR]
 
+export const MOTEUR_COLLECTE = {
+  factice: 'factice',
+  layoutlmv3: 'layoutlmv3',
+} as const
+
+export type MoteurCollecteConfigure = (typeof MOTEUR_COLLECTE)[keyof typeof MOTEUR_COLLECTE]
+
 // Le venv du sidecar en developpement. En production, le Dockerfile installe le sidecar dans
 // /opt/ocr et renseigne la variable lui-meme.
 const CHEMIN_PYTHON_PAR_DEFAUT = fileURLToPath(
   new URL('../../../condensation/sidecar/.venv/bin/python', import.meta.url),
 )
+
+// Meme logique pour le sidecar d'etiquetage : venv du depot en developpement, /opt/collecte
+// dans l'image docker.
+const CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT = fileURLToPath(
+  new URL('../../../collecte/sidecar/.venv/bin/python', import.meta.url),
+)
+
+// Checkpoint LayoutLMv3 fine-tune sur CORD (recus). Configurable pour accueillir le futur
+// modele fine-tune maison sans toucher au code.
+const MODELE_COLLECTE_PAR_DEFAUT = 'nielsr/layoutlmv3-finetuned-cord'
 
 // Un ouvrier de moins que de coeurs : le thread principal doit garder de quoi accepter les
 // requetes et rendre les reponses, sinon la latence grimpe alors meme que le debit plafonne.
@@ -78,15 +95,26 @@ const EnvSchema = z
     DELAI_OCR_MS: z.coerce.number().int().positive().default(20_000),
     CHEMIN_PYTHON_OCR: z.string().default(CHEMIN_PYTHON_PAR_DEFAUT),
     DETECTION_OCR: z.enum(DETECTION_OCR).default(DETECTION_OCR.mobile),
+    // Optionnelle en developpement (defaut factice, applique plus bas) pour qu'un clone frais
+    // demarre sans python ; exigee en production, ou un service tournant en silence au moteur
+    // factice rendrait des factures inventees.
+    MOTEUR_COLLECTE: z.enum(MOTEUR_COLLECTE).optional(),
+    // 3103 : 3100 est l'api, 3101 le sidecar ocr, 3102 celui du banc de condensation.
+    PORT_SIDECAR_COLLECTE: z.coerce.number().int().positive().default(3103),
+    DELAI_COLLECTE_MS: z.coerce.number().int().positive().default(6_000),
+    CHEMIN_PYTHON_COLLECTE: z.string().default(CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT),
+    MODELE_COLLECTE: z.string().default(MODELE_COLLECTE_PAR_DEFAUT),
   })
   .superRefine((valeurs, contexte) => {
-    // Le moteur doit abandonner sa lecture avant que l'atelier tue l'ouvrier qui l'attend :
-    // sinon chaque lecture trop longue couterait un ouvrier au lieu d'un simple 504.
-    if (valeurs.DELAI_OCR_MS >= valeurs.DELAI_DISTILLATION_MS) {
+    // Chaque moteur doit abandonner avant que l'atelier tue l'ouvrier qui l'attend : sinon
+    // chaque appel trop long couterait un ouvrier au lieu d'un simple 504. La somme des deux
+    // plafonds laisse a la chauffe le reste du budget de la distillation.
+    if (valeurs.DELAI_OCR_MS + valeurs.DELAI_COLLECTE_MS >= valeurs.DELAI_DISTILLATION_MS) {
       contexte.addIssue({
         code: 'custom',
         path: ['DELAI_OCR_MS'],
-        message: 'DELAI_OCR_MS doit etre strictement inferieur a DELAI_DISTILLATION_MS.',
+        message:
+          'DELAI_OCR_MS + DELAI_COLLECTE_MS doit rester strictement sous DELAI_DISTILLATION_MS.',
       })
     }
 
@@ -109,12 +137,22 @@ const EnvSchema = z
           'MOTEUR_OCR est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `paddleocr`.',
       })
     }
+
+    if (valeurs.MOTEUR_COLLECTE === undefined) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['MOTEUR_COLLECTE'],
+        message:
+          'MOTEUR_COLLECTE est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `layoutlmv3`.',
+      })
+    }
   })
   .transform((valeurs) => ({
-    // Le defaut ne s'applique qu'en developpement : en production, l'absence a deja refuse le
-    // demarrage juste au-dessus.
+    // Les defauts ne s'appliquent qu'en developpement : en production, l'absence a deja refuse
+    // le demarrage juste au-dessus.
     ...valeurs,
     MOTEUR_OCR: valeurs.MOTEUR_OCR ?? MOTEUR_OCR.factice,
+    MOTEUR_COLLECTE: valeurs.MOTEUR_COLLECTE ?? MOTEUR_COLLECTE.factice,
   }))
 
 // Une cle laissee vide dans un gabarit ou dans le tableau de bord de deploiement vaut « non

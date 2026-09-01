@@ -5,6 +5,7 @@ import {
   $,
   acheve,
   badgeStatut,
+  colorerJson,
   dureeEtape,
   estSelection,
   FLECHE,
@@ -239,7 +240,11 @@ function carteProduit(etat, derniere) {
     terme.textContent = nom
     const definition = document.createElement('dd')
     definition.className = estRenseigne(valeur) ? 'reconnu' : 'nul'
-    definition.textContent = texteValeur(valeur)
+    if (Array.isArray(valeur) && valeur.length > 0) {
+      definition.append(deroulantTableau(valeur))
+    } else {
+      definition.textContent = texteValeur(valeur)
+    }
     grille.append(terme, definition)
   }
 
@@ -253,11 +258,28 @@ const estRenseigne = (valeur) =>
   valeur !== '' &&
   !(Array.isArray(valeur) && valeur.length === 0)
 
+// Un tableau (taxes, articles) se deplie sur place : son compte seul cacherait justement ce
+// qu'on vient verifier. Le contenu se rend en json structure, colore comme la sortie brute de
+// l'inspecteur : un seul format de lecture pour tout le hublot.
+function deroulantTableau(valeurs) {
+  const deroulant = document.createElement('details')
+  const resume = document.createElement('summary')
+  resume.textContent = `[${valeurs.length}]`
+
+  const json = document.createElement('pre')
+  json.className = 'produit-json'
+  json.innerHTML = colorerJson(JSON.stringify(valeurs, null, 2))
+
+  deroulant.append(resume, json)
+  return deroulant
+}
+
 // Rendre lisible une valeur dont on ne sait rien : un tableau donne son compte, un objet plat
-// ses valeurs separees, tout le reste se lit tel quel.
+// ses valeurs separees, un nombre s'arrondit a l'affichage, tout le reste se lit tel quel.
 function texteValeur(valeur) {
   if (valeur === null || valeur === undefined) return 'null'
   if (Array.isArray(valeur)) return valeur.length === 0 ? '[]' : `[${valeur.length}]`
   if (typeof valeur === 'object') return Object.values(valeur).map(texteValeur).join(' · ')
+  if (typeof valeur === 'number') return String(Math.round(valeur * 10000) / 10000)
   return String(valeur)
 }

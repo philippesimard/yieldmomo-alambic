@@ -16,6 +16,19 @@ function extrait<T extends z.ZodType>(valeur: T) {
   return z.object({ valeur, confiance: ConfianceSchema })
 }
 
+// Reseau de carte normalise, et non le libelle imprime : le consommateur est un programme, il
+// teste un code stable. `autre` couvre un contexte carte reconnu sans marque identifiee ;
+// comptant ou illisible vaut null.
+export const TYPE_CARTE = {
+  visa: 'visa',
+  mastercard: 'mastercard',
+  amex: 'amex',
+  interac: 'interac',
+  autre: 'autre',
+} as const
+
+export type TypeCarte = (typeof TYPE_CARTE)[keyof typeof TYPE_CARTE]
+
 // Une ligne porte sa confiance en bloc plutot que champ par champ : le moteur la lit d'un
 // seul tenant, et une confiance par cellule serait une precision qu'aucun ocr ne fournit.
 export const ArticleSchema = z.object({
@@ -47,6 +60,7 @@ export const FactureSchema = z.object({
   sousTotal: extrait(MontantSchema).nullable(),
   taxes: z.array(TaxeSchema),
   total: extrait(MontantSchema).nullable(),
+  carte: extrait(z.enum(TYPE_CARTE)).nullable(),
   articles: z.array(ArticleSchema),
 })
 
@@ -63,5 +77,6 @@ export const FACTURE_VIDE: Facture = {
   sousTotal: null,
   taxes: [],
   total: null,
+  carte: null,
   articles: [],
 }

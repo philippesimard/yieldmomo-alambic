@@ -1,1 +1,7 @@
 export { collecter, SOUS_ETAPES_COLLECTE } from './collecte'
+export { ETIQUETTE, type Etiquette, type MotEtiquete } from './etiquettes'
+export { moteurFacticeEtiquetage } from './factice'
+export { creerMoteurLayoutlm, type OptionsMoteurLayoutlm } from './layoutlm'
+export type { MoteurEtiquetage } from './moteur'
+export { type BoiteNormalisee, boiteNormalisee, decouperEnMots, type Mot } from './mots'
+export { SIDECAR_LAYOUTLM } from './sidecar'

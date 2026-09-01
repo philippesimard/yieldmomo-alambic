@@ -1,69 +1,114 @@
 import {
-  type BlocTexte,
   type Condensat,
-  FACTURE_VIDE,
   type Facture,
   GENRE_APERCU,
   grouperEnLignes,
+  type ImageChauffee,
   STATUT_ETAPE,
   type Traceur,
 } from '@alambic/noyau'
-import { montantDe } from './montant'
-
-// Ce qui designe le total sur un recu. Volontairement court : le squelette ne reconnait que ce
-// champ, et l'elargir sans corpus de mesure serait deviner.
-const MARQUEURS_TOTAL = ['total', 'montant du'] as const
-
-// Ecarte les lignes qui contiennent « total » sans etre LE total. Sans ce filtre, un
-// sous-total imprime au-dessus ecraserait le vrai montant, puisqu'on garde la derniere
-// correspondance.
-const MARQUEURS_ECARTES = ['sous', 'sub'] as const
+import { ETIQUETTE, epurer, type MotEtiquete } from './etiquettes'
+import type { MoteurEtiquetage } from './moteur'
+import { decouperEnMots } from './mots'
+import { reconnaitreCarte } from './reconnaisseurs/carte'
+import { reconnaitreDate } from './reconnaisseurs/date'
+import { reconnaitreDevise } from './reconnaisseurs/devise'
+import { reconnaitreMarchand } from './reconnaisseurs/marchand'
+import { extraireEntites, reconstruire } from './reconstruction'
 
 const SOUS_ETAPE = {
-  groupementLignes: 'groupement_lignes',
-  reconnaissanceTotal: 'reconnaissance_total',
+  decoupageMots: 'decoupage_mots',
+  etiquetage: 'etiquetage',
+  reconstruction: 'reconstruction',
+  reconnaisseurs: 'reconnaisseurs',
 } as const
 
 export const SOUS_ETAPES_COLLECTE = [
-  SOUS_ETAPE.groupementLignes,
-  SOUS_ETAPE.reconnaissanceTotal,
+  SOUS_ETAPE.decoupageMots,
+  SOUS_ETAPE.etiquetage,
+  SOUS_ETAPE.reconstruction,
+  SOUS_ETAPE.reconnaisseurs,
 ] as const
 
-type Reconnaissance = {
-  total: Facture['total']
-  ligneRetenue: string | null
-  marqueur: string | null
-}
+// Interprete le condensat en facture. Le moteur d'etiquetage est injecte et jamais choisi
+// ici ; la reconstruction et les reconnaisseurs restent purs et deterministes, exerces a
+// l'identique par tous les moteurs. L'image accompagne le condensat parce que le modele lit
+// aussi les pixels — et c'est elle qui porte les dimensions que la normalisation des boites
+// demande.
+export async function collecter(
+  condensat: Condensat,
+  image: ImageChauffee,
+  moteur: MoteurEtiquetage,
+  traceur?: Traceur,
+): Promise<Facture> {
+  const finDecoupage = traceur?.demarrer(SOUS_ETAPE.decoupageMots)
+  const mots = decouperEnMots(condensat.blocs)
+  finDecoupage?.({
+    statut: STATUT_ETAPE.reussi,
+    apercus: [
+      { genre: GENRE_APERCU.donnees, valeur: { blocs: condensat.blocs.length, mots: mots.length } },
+    ],
+  })
 
-// Interprete le condensat en facture. Fonction pure et synchrone : memes entrees, memes
-// resultats, aucune entree-sortie. C'est ce qui la rendra verifiable isolement, sans image ni
-// moteur ocr, le jour ou la reconnaissance sera ecrite pour de bon.
-//
-// Le squelette ne reconnait que le total. La date, le marchand, les taxes et les articles
-// viendront a leur tour ; le contrat les prevoit deja, tous nullables.
-export function collecter(condensat: Condensat, traceur?: Traceur): Facture {
-  const finGroupement = traceur?.demarrer(SOUS_ETAPE.groupementLignes)
-  const lignes = grouperEnLignes(condensat.blocs)
-  finGroupement?.({
+  const finEtiquetage = traceur?.demarrer(SOUS_ETAPE.etiquetage)
+  const etiquetes = epurer(await moteur.etiqueter(mots, image))
+  const reconnus = etiquetes.filter((mot) => mot.etiquette !== ETIQUETTE.exterieur)
+  finEtiquetage?.({
+    statut: STATUT_ETAPE.reussi,
+    apercus: [
+      {
+        genre: GENRE_APERCU.cadres,
+        cadres: reconnus.map((mot) => ({
+          cadre: mot.cadre,
+          texte: `${mot.texte} → ${mot.etiquette}`,
+          confiance: mot.score,
+        })),
+        largeur: image.largeur,
+        hauteur: image.hauteur,
+      },
+      {
+        genre: GENRE_APERCU.donnees,
+        valeur: { moteur: moteur.nom, etiquetes: repartition(reconnus) },
+      },
+    ],
+  })
+
+  const finReconstruction = traceur?.demarrer(SOUS_ETAPE.reconstruction)
+  const lignesMots = grouperEnLignes(etiquetes)
+  const entites = extraireEntites(etiquetes)
+  const montants = reconstruire(entites, lignesMots)
+  finReconstruction?.({
     statut: STATUT_ETAPE.reussi,
     apercus: [
       {
         genre: GENRE_APERCU.donnees,
+        // Les tableaux entiers, pas leurs comptes : c'est dans cet apercu qu'on juge une
+        // reconstruction, article par article.
         valeur: {
-          lignes: lignes.length,
-          blocs: condensat.blocs.length,
-          contenu: lignes.map((ligne) => ligne.map((bloc) => bloc.texte).join('  ')),
+          entites: entites.map((entite) => `${entite.etiquette} : ${entite.texte}`),
+          sousTotal: montants.sousTotal?.valeur ?? null,
+          total: montants.total?.valeur ?? null,
+          taxes: montants.taxes,
+          articles: montants.articles,
         },
       },
     ],
   })
 
-  const finTotal = traceur?.demarrer(SOUS_ETAPE.reconnaissanceTotal)
-  const reconnaissance = reconnaitreTotal(lignes)
-  const facture: Facture = { ...FACTURE_VIDE, total: reconnaissance.total }
-
+  const finReconnaisseurs = traceur?.demarrer(SOUS_ETAPE.reconnaisseurs)
+  const lignesBlocs = grouperEnLignes(condensat.blocs)
+  const facture: Facture = {
+    marchand: reconnaitreMarchand(lignesBlocs),
+    date: reconnaitreDate(lignesBlocs),
+    devise: reconnaitreDevise(lignesBlocs),
+    sousTotal: montants.sousTotal,
+    taxes: montants.taxes,
+    total: montants.total,
+    carte: reconnaitreCarte(lignesBlocs),
+    articles: montants.articles,
+  }
   const nuls = champsNuls(facture)
-  finTotal?.({
+  finReconnaisseurs?.({
     statut: nuls.length === 0 ? STATUT_ETAPE.reussi : STATUT_ETAPE.degrade,
     motif:
       nuls.length === 0
@@ -73,11 +118,10 @@ export function collecter(condensat: Condensat, traceur?: Traceur): Facture {
       {
         genre: GENRE_APERCU.donnees,
         valeur: {
-          ligneRetenue: reconnaissance.ligneRetenue,
-          marqueur: reconnaissance.marqueur,
-          montant: reconnaissance.total?.valeur ?? null,
-          confiance: reconnaissance.total?.confiance ?? null,
-          marqueursCherches: MARQUEURS_TOTAL,
+          marchand: facture.marchand?.valeur ?? null,
+          date: facture.date?.valeur ?? null,
+          devise: facture.devise?.valeur ?? null,
+          carte: facture.carte?.valeur ?? null,
           champsNuls: nuls,
         },
       },
@@ -95,34 +139,10 @@ function champsNuls(facture: Facture): string[] {
     .map(([nom]) => nom)
 }
 
-function reconnaitreTotal(lignes: readonly BlocTexte[][]): Reconnaissance {
-  // La derniere ligne qui porte un marqueur, pas la premiere : un recu imprime souvent un
-  // rappel du total en tete, et c'est le pied de ticket qui fait foi.
-  for (const ligne of [...lignes].reverse()) {
-    const texte = ligne.map((bloc) => bloc.texte).join(' ')
-    const marqueur = marqueurDe(texte)
-    if (marqueur === null) continue
-
-    const valeur = montantDe(texte)
-    if (valeur === null) continue
-
-    return {
-      total: { valeur, confiance: confianceDe(ligne) },
-      ligneRetenue: texte,
-      marqueur,
-    }
+function repartition(mots: readonly MotEtiquete[]): Record<string, number> {
+  const comptes: Record<string, number> = {}
+  for (const mot of mots) {
+    comptes[mot.etiquette] = (comptes[mot.etiquette] ?? 0) + 1
   }
-  return { total: null, ligneRetenue: null, marqueur: null }
-}
-
-function marqueurDe(texte: string): string | null {
-  const normalise = texte.toLowerCase()
-  if (MARQUEURS_ECARTES.some((marqueur) => normalise.includes(marqueur))) return null
-  return MARQUEURS_TOTAL.find((marqueur) => normalise.includes(marqueur)) ?? null
-}
-
-// Le maillon faible, et non la moyenne : un total dont le libelle est net mais le montant
-// douteux reste un total douteux, et c'est le montant qui compte.
-function confianceDe(ligne: readonly BlocTexte[]): number {
-  return Math.min(...ligne.map((bloc) => bloc.confiance))
+  return comptes
 }

@@ -54,6 +54,16 @@ export function formaterPoids(octets) {
   return `${(octets / 1024 / 1024).toFixed(2)} Mo`
 }
 
+// Le meme json colore partout ou du json s'affiche : la sortie brute de l'inspecteur et les
+// tableaux deplies du produit doivent se lire pareil.
+export function colorerJson(json) {
+  return json
+    .replace(/[&<>]/g, (caractere) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[caractere])
+    .replace(/"([^"]+)":/g, '<span class="cle">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="txt">"$1"</span>')
+    .replace(/: (-?\d+\.?\d*)/g, ': <span class="num">$1</span>')
+}
+
 // Deux decimales sous la milliseconde : au dixieme, toutes les sous-etapes rapides
 // s'afficheraient a 0,0 ms et deviendraient incomparables entre elles.
 export const formaterMs = (ms) => `${ms < 1 ? ms.toFixed(2) : ms.toFixed(1)} ms`

@@ -2,7 +2,8 @@ import { CODE_ERREUR, ReponseErreurSchema, type Sante, SanteSchema } from '@alam
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { ouvriersVivants } from '../atelier/atelier'
 import { env } from '../config/env'
-import { sidecarOcrPret } from '../sidecar-ocr'
+import { sidecarCollectePret } from '../sidecars/collecte'
+import { sidecarOcrPret } from '../sidecars/ocr'
 
 function sante(): Sante {
   return {
@@ -10,6 +11,7 @@ function sante(): Sante {
     horodatage: new Date().toISOString(),
     ouvriers: ouvriersVivants(),
     moteurOcr: { nom: env.MOTEUR_OCR, pret: sidecarOcrPret() },
+    moteurCollecte: { nom: env.MOTEUR_COLLECTE, pret: sidecarCollectePret() },
   }
 }
 
@@ -41,6 +43,12 @@ export const routeSante: FastifyPluginAsyncZod = async (app) => {
         return reponse
           .code(503)
           .send({ code: CODE_ERREUR.moteurIndisponible, message: "Le moteur ocr n'est pas pret." })
+      }
+      if (!sidecarCollectePret()) {
+        return reponse.code(503).send({
+          code: CODE_ERREUR.moteurIndisponible,
+          message: "Le moteur d'etiquetage n'est pas pret.",
+        })
       }
       return reponse.send(sante())
     },

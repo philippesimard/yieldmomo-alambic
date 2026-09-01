@@ -1,0 +1,8 @@
+# L'index cpu de pytorch d'abord : sans lui, pip tire sur linux la roue cuda et ses ~2,5 Go
+# de bibliotheques nvidia dont l'inference cpu n'a que faire.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.13.0
+# La lignee 4.x, pas la 5 : transformers 5 remplace le tokenizer LayoutLMv3 par un roberta nu
+# qui ignore les boites — toute la branche layout du modele serait aveugle.
+transformers==4.57.6
+pillow==12.3.0

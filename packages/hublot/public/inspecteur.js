@@ -3,6 +3,7 @@
 
 import {
   $,
+  colorerJson,
   dureeEtape,
   dureeTotale,
   estSelection,
@@ -176,15 +177,7 @@ function rendreJson(etat) {
   }
 
   cible.textContent = `${trace.sousEtape} · apercus[${index}].valeur`
-  pre.innerHTML = colorer(JSON.stringify(trace.apercus[index].valeur, null, 2))
-}
-
-function colorer(json) {
-  return json
-    .replace(/[&<>]/g, (caractere) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[caractere])
-    .replace(/"([^"]+)":/g, '<span class="cle">"$1"</span>:')
-    .replace(/: "([^"]*)"/g, ': <span class="txt">"$1"</span>')
-    .replace(/: (-?\d+\.?\d*)/g, ': <span class="num">$1</span>')
+  pre.innerHTML = colorerJson(JSON.stringify(trace.apercus[index].valeur, null, 2))
 }
 
 function rendreChrono(etat) {

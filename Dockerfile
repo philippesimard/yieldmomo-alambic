@@ -25,6 +25,20 @@ ENV PADDLE_PDX_CACHE_HOME=/opt/paddlex
 RUN /opt/ocr/bin/python packages/condensation/sidecar/serveur.py --preparer
 ENV CHEMIN_PYTHON_OCR=/opt/ocr/bin/python
 
+# --- Sidecar d'etiquetage (etape Collecte) ---
+# Un venv separe de /opt/ocr : les pins de torch et de paddle ne se negocient jamais entre eux.
+COPY packages/collecte/sidecar/requirements.lock ./packages/collecte/sidecar/
+RUN python3 -m venv /opt/collecte \
+    && /opt/collecte/bin/pip install --no-cache-dir -r packages/collecte/sidecar/requirements.lock
+COPY packages/collecte/sidecar ./packages/collecte/sidecar
+
+# Poids du modele dans l'image au build, comme les modeles paddle ; HF_HUB_OFFLINE garantit
+# ensuite qu'aucune execution ne tentera de telecharger.
+ENV HF_HOME=/opt/hf
+RUN /opt/collecte/bin/python packages/collecte/sidecar/serveur.py --preparer
+ENV HF_HUB_OFFLINE=1
+ENV CHEMIN_PYTHON_COLLECTE=/opt/collecte/bin/python
+
 # --- Service node ---
 # Manifestes d'abord : le cache Docker du `npm ci` n'est invalide que si un package.json ou le
 # lock change, pas a chaque edition de code.
@@ -44,10 +58,11 @@ COPY packages ./packages
 ENV NODE_ENV=production
 EXPOSE 3100
 
-# /ready et non /health : un Alambic sans ouvrier vivant ou sans moteur ocr pret ne peut rien
+# /ready et non /health : un Alambic sans ouvrier vivant ou sans moteur pret ne peut rien
 # distiller, meme si son process repond encore. C'est la panne qu'un redemarrage repare.
-# start-period de 90s : le sidecar charge son modele avant de repondre, et /ready l'attend.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+# start-period de 120s : chaque sidecar charge son modele avant de repondre, et /ready attend
+# les deux.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3100/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 # tsx consomme la source TypeScript directement, sans pipeline de build a maintenir : c'est

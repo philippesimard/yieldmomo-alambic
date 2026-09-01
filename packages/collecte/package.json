@@ -16,7 +16,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@alambic/noyau": "^0.0.0"
+    "@alambic/noyau": "^0.0.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.0.1"

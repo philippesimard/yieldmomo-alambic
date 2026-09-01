@@ -1185,6 +1185,9 @@ li[data-statut="en_erreur"] .sous-ms {
 
 .produit-grille dd {
   margin: 0;
+  /* Sans min-width, la cellule de grille s'elargit a la ligne la plus longue d'un json
+     deplie, et tout le bloc deborde de la carte au lieu de replier. */
+  min-width: 0;
   text-align: right;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -1201,6 +1204,53 @@ li[data-statut="en_erreur"] .sous-ms {
 .reconnu {
   color: var(--reussi);
   font-weight: 500;
+}
+
+/* Les tableaux du produit (taxes, articles) se deplient sur place : leur compte seul
+   cacherait justement ce qu'on vient verifier. */
+.produit-grille details {
+  display: block;
+  max-width: 100%;
+  text-align: right;
+}
+
+.produit-grille summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.produit-grille summary::-webkit-details-marker {
+  display: none;
+}
+
+.produit-grille summary::after {
+  content: " ▸";
+  color: var(--texte-3);
+}
+
+.produit-grille details[open] summary::after {
+  content: " ▾";
+}
+
+.produit-json {
+  margin: 6px 0 2px;
+  padding: 8px 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.55;
+  /* La carte est etroite : les lignes longues replient sur place plutot que de forcer un
+     defilement horizontal qui cacherait les valeurs. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--texte-2);
+  background: var(--carte-2);
+  border: 1px solid var(--bord);
+  border-radius: var(--r-champ);
+  tab-size: 2;
 }
 
 /* json */

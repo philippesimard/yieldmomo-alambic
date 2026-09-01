@@ -15,7 +15,7 @@ Le traitement se fait en trois étapes, chacune spécialisée dans une seule par
 |---|---|---|
 | **Chauffe** | `packages/chauffe` | `Buffer` → `ImageChauffee` |
 | **Condensation** | `packages/condensation` | `ImageChauffee` → `Condensat` |
-| **Collecte** | `packages/collecte` | `Condensat` → `Facture` |
+| **Collecte** | `packages/collecte` | `Condensat` + `ImageChauffee` → `Facture` |
 
 **Une étape n'importe jamais une autre étape.** Elles ne communiquent qu'à travers les contrats de
 `packages/noyau`, et c'est `packages/api` qui les enchaîne (`src/distiller.ts`, le seul fichier du

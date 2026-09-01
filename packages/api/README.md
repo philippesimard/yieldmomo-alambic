@@ -9,7 +9,7 @@ connaît les trois étapes ; aucune d'elles ne sait ce qui la précède ni ce qu
 |---|---|
 | `POST /distiller` | Une image en `multipart/form-data` → une `Facture` en JSON |
 | `GET /health` | Liveness : le process répond |
-| `GET /ready` | Readiness : l'atelier a au moins un ouvrier vivant |
+| `GET /ready` | Readiness : l'atelier a au moins un ouvrier vivant et les moteurs sont prêts |
 
 `POST /distiller` exige l'en-tête `x-cle-alambic`, comparée en temps constant sur des empreintes
 SHA-256 — comparer directement les secrets trahirait leur longueur, et un `===` s'arrête au
@@ -34,6 +34,18 @@ sans avoir rien servi ne démarrera probablement jamais : au-delà de 10 morts p
 **cesse de remplacer** et se vide. `/ready` passe alors en 503 et l'orchestrateur redémarre le
 conteneur — mieux vaut un service qui s'annonce mort qu'une boucle de création qui brûle un cœur
 en cachant la panne.
+
+## Les sidecars
+
+Deux processus Python accompagnent le serveur : l'OCR de la Condensation (port 3101) et
+l'étiquetage de la Collecte (port 3103). Un seul superviseur les gère (`src/sidecars/
+superviseur.ts`) — fabrique instanciée deux fois, pas deux copies du même code : spawn, sonde de
+santé, relance à recul exponentiel, disjoncteur au-delà de 5 morts en 5 minutes, SIGTERM puis
+SIGKILL à l'arrêt. Un moteur configuré en `factice` n'a pas de sidecar et se dit toujours prêt.
+
+Chaque sidecar charge **une** instance de son modèle, partagée par tous les ouvriers et
+sérialisée par un verrou : N ouvriers qui chargeraient chacun leur copie multiplieraient la
+mémoire sans gagner de débit, les runtimes parallélisant déjà chaque appel sur les cœurs.
 
 ### `ouvrier.mjs`
 

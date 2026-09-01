@@ -11,9 +11,12 @@ const PART_RECOUVREMENT = 0.5
 // sans avoir le droit de se connaitre : la Condensation pour donner au condensat son ordre de
 // lecture, la Collecte pour rapprocher un libelle de son montant. C'est une lecture du
 // contrat, pas un traitement.
-export function grouperEnLignes(blocs: readonly BlocTexte[]): BlocTexte[][] {
+//
+// Generique et non fige sur BlocTexte : la Collecte groupe des fragments enrichis (mots,
+// etiquettes) et doit les retrouver tels quels dans les lignes rendues.
+export function grouperEnLignes<T extends BlocTexte>(blocs: readonly T[]): T[][] {
   const parHaut = [...blocs].sort((a, b) => a.cadre.y - b.cadre.y)
-  const lignes: BlocTexte[][] = []
+  const lignes: T[][] = []
 
   for (const bloc of parHaut) {
     const courante = lignes.at(-1)

@@ -1,7 +1,8 @@
 import { arreterAtelier, demarrerAtelier } from './atelier/atelier'
 import { env } from './config/env'
 import { construireServeur } from './serveur'
-import { arreterSidecarOcr, demarrerSidecarOcr } from './sidecar-ocr'
+import { arreterSidecarCollecte, demarrerSidecarCollecte } from './sidecars/collecte'
+import { arreterSidecarOcr, demarrerSidecarOcr } from './sidecars/ocr'
 
 // Au-dela de ce delai, on cesse d'attendre les requetes en cours et on sort en echec : un arret
 // qui pend finit tue par SIGKILL, sans trace de ce qui bloquait.
@@ -9,9 +10,11 @@ const DELAI_ARRET_MS = 10_000
 
 const app = await construireServeur()
 
-// Le sidecar d'abord : son modele met plusieurs secondes a charger, autant payer ce temps
-// pendant que l'atelier se met en place. /ready reste en 503 tant qu'il n'est pas pret.
+// Les sidecars d'abord : leurs modeles mettent plusieurs secondes a charger, autant payer ce
+// temps pendant que l'atelier se met en place. /ready reste en 503 tant qu'ils ne sont pas
+// prets.
 demarrerSidecarOcr()
+demarrerSidecarCollecte()
 
 // L'atelier AVANT l'ecoute : accepter du trafic avant que les ouvriers soient la, c'est
 // repondre 503 aux premieres requetes de chaque deploiement.
@@ -34,11 +37,11 @@ for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     }, DELAI_ARRET_MS).unref()
 
     // L'atelier ferme APRES le serveur : les requetes en cours attendent encore leur ouvrier.
-    // Le sidecar ferme en dernier : des ouvriers peuvent avoir des lectures en vol.
+    // Les sidecars ferment en dernier : des ouvriers peuvent avoir des appels en vol.
     app
       .close()
       .then(() => arreterAtelier())
-      .then(() => arreterSidecarOcr())
+      .then(() => Promise.all([arreterSidecarOcr(), arreterSidecarCollecte()]))
       .then(
         () => process.exit(0),
         (erreur) => {
