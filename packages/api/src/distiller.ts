@@ -1,11 +1,26 @@
 import { chauffer, SOUS_ETAPES_CHAUFFE } from '@alambic/chauffe'
 import { collecter, SOUS_ETAPES_COLLECTE } from '@alambic/collecte'
-import { condenser, moteurFactice, SOUS_ETAPES_CONDENSATION } from '@alambic/condensation'
+import {
+  condenser,
+  creerMoteurPaddle,
+  moteurFactice,
+  SOUS_ETAPES_CONDENSATION,
+} from '@alambic/condensation'
 import { type Distillation, ETAPE, type PlanPipeline, type Tracage } from '@alambic/noyau'
+import { env, MOTEUR_OCR } from './config/env'
 
-// Le moteur ocr, choisi en un seul endroit. Factice pour l'instant : le vrai se decidera sur
-// mesures quand on attaquera la Condensation, et ne changera que cette ligne.
-const MOTEUR = moteurFactice
+// Le moteur ocr, choisi par la configuration et non par le code : le thread principal (qui
+// lance ou non le sidecar) et les ouvriers (qui construisent le client) doivent partager le
+// meme choix, et la config est le seul endroit qui parle aux deux.
+const MOTEURS = {
+  [MOTEUR_OCR.factice]: moteurFactice,
+  [MOTEUR_OCR.paddleocr]: creerMoteurPaddle({
+    url: `http://127.0.0.1:${env.PORT_SIDECAR_OCR}`,
+    delaiMs: env.DELAI_OCR_MS,
+  }),
+} as const
+
+const MOTEUR = MOTEURS[env.MOTEUR_OCR]
 
 // Arrondi au dixieme de milliseconde : la Collecte s'execute souvent en moins d'une
 // milliseconde, et l'arrondi a l'entier la ferait disparaitre des mesures.

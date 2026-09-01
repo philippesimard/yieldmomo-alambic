@@ -15,6 +15,26 @@ export const ENVIRONNEMENT = {
 
 export type Environnement = (typeof ENVIRONNEMENT)[keyof typeof ENVIRONNEMENT]
 
+export const MOTEUR_OCR = {
+  factice: 'factice',
+  paddleocr: 'paddleocr',
+} as const
+
+export type MoteurOcrConfigure = (typeof MOTEUR_OCR)[keyof typeof MOTEUR_OCR]
+
+export const DETECTION_OCR = {
+  mobile: 'mobile',
+  server: 'server',
+} as const
+
+export type DetectionOcr = (typeof DETECTION_OCR)[keyof typeof DETECTION_OCR]
+
+// Le venv du sidecar en developpement. En production, le Dockerfile installe le sidecar dans
+// /opt/ocr et renseigne la variable lui-meme.
+const CHEMIN_PYTHON_PAR_DEFAUT = fileURLToPath(
+  new URL('../../../condensation/sidecar/.venv/bin/python', import.meta.url),
+)
+
 // Un ouvrier de moins que de coeurs : le thread principal doit garder de quoi accepter les
 // requetes et rendre les reponses, sinon la latence grimpe alors meme que le debit plafonne.
 const OUVRIERS_PAR_DEFAUT = Math.max(1, availableParallelism() - 1)
@@ -49,8 +69,27 @@ const EnvSchema = z
     // Plafond par distillation. Sans lui, un ouvrier bloque sur une image pathologique est
     // perdu pour toujours, et l'atelier se vide en silence sous la charge.
     DELAI_DISTILLATION_MS: z.coerce.number().int().positive().default(30_000),
+    // Optionnelle en developpement (defaut factice, applique plus bas) pour qu'un clone frais
+    // demarre sans python ; exigee en production, ou un service tournant en silence au moteur
+    // factice rendrait des factures inventees.
+    MOTEUR_OCR: z.enum(MOTEUR_OCR).optional(),
+    // 3101 : 3100 est deja l'api, 3000 l'api de YieldMomo sur le meme poste.
+    PORT_SIDECAR_OCR: z.coerce.number().int().positive().default(3101),
+    DELAI_OCR_MS: z.coerce.number().int().positive().default(20_000),
+    CHEMIN_PYTHON_OCR: z.string().default(CHEMIN_PYTHON_PAR_DEFAUT),
+    DETECTION_OCR: z.enum(DETECTION_OCR).default(DETECTION_OCR.mobile),
   })
   .superRefine((valeurs, contexte) => {
+    // Le moteur doit abandonner sa lecture avant que l'atelier tue l'ouvrier qui l'attend :
+    // sinon chaque lecture trop longue couterait un ouvrier au lieu d'un simple 504.
+    if (valeurs.DELAI_OCR_MS >= valeurs.DELAI_DISTILLATION_MS) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['DELAI_OCR_MS'],
+        message: 'DELAI_OCR_MS doit etre strictement inferieur a DELAI_DISTILLATION_MS.',
+      })
+    }
+
     if (valeurs.NODE_ENV !== ENVIRONNEMENT.production) return
 
     if (valeurs.ALAMBIC_CLE === undefined) {
@@ -61,7 +100,22 @@ const EnvSchema = z
           'ALAMBIC_CLE est requise en production : sans elle, le service accepte des images de nimporte qui. Generer avec `openssl rand -base64 32`.',
       })
     }
+
+    if (valeurs.MOTEUR_OCR === undefined) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['MOTEUR_OCR'],
+        message:
+          'MOTEUR_OCR est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `paddleocr`.',
+      })
+    }
   })
+  .transform((valeurs) => ({
+    // Le defaut ne s'applique qu'en developpement : en production, l'absence a deja refuse le
+    // demarrage juste au-dessus.
+    ...valeurs,
+    MOTEUR_OCR: valeurs.MOTEUR_OCR ?? MOTEUR_OCR.factice,
+  }))
 
 // Une cle laissee vide dans un gabarit ou dans le tableau de bord de deploiement vaut « non
 // definie », pas « invalide » : sans ce nettoyage, ALAMBIC_CLE= ferait echouer le min(32)

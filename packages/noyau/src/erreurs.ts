@@ -14,6 +14,10 @@ export const CODE_ERREUR = {
   aucunTexte: 'aucun_texte',
   delaiDepasse: 'delai_depasse',
   surcharge: 'surcharge',
+  // Une dependance du pipeline (moteur ocr) ne repond pas. Distinct de `surcharge` (reessayer
+  // tout de suite est inutile) et de `erreur_interne` (rien n'est casse dans Alambic) : le
+  // consommateur peut reessayer plus tard, le temps que la dependance revienne.
+  moteurIndisponible: 'moteur_indisponible',
   erreurInterne: 'erreur_interne',
 } as const
 

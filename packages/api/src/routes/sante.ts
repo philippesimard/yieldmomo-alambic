@@ -1,12 +1,15 @@
 import { CODE_ERREUR, ReponseErreurSchema, type Sante, SanteSchema } from '@alambic/noyau'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { ouvriersVivants } from '../atelier/atelier'
+import { env } from '../config/env'
+import { sidecarOcrPret } from '../sidecar-ocr'
 
 function sante(): Sante {
   return {
     statut: 'ok',
     horodatage: new Date().toISOString(),
     ouvriers: ouvriersVivants(),
+    moteurOcr: { nom: env.MOTEUR_OCR, pret: sidecarOcrPret() },
   }
 }
 
@@ -33,6 +36,11 @@ export const routeSante: FastifyPluginAsyncZod = async (app) => {
         return reponse
           .code(503)
           .send({ code: CODE_ERREUR.surcharge, message: "Aucun ouvrier dans l'atelier." })
+      }
+      if (!sidecarOcrPret()) {
+        return reponse
+          .code(503)
+          .send({ code: CODE_ERREUR.moteurIndisponible, message: "Le moteur ocr n'est pas pret." })
       }
       return reponse.send(sante())
     },

@@ -88,9 +88,11 @@ Tous les champs sont nullables : une photo froissée peut ne livrer qu'un total,
 facture partielle vaut mieux que refuser la requête. Chaque champ porte sa **confiance**, pour
 que l'appelant sache quoi faire confirmer à l'utilisateur.
 
-> **État actuel :** le squelette tourne de bout en bout, mais la Condensation utilise un moteur
-> OCR **factice** et la Collecte ne reconnaît que le total. C'est délibéré : chaque étape sera
-> travaillée séparément, et le vrai moteur se choisira sur mesures.
+> **État actuel :** la Condensation lit avec un vrai moteur — **PaddleOCR** (PP-OCRv5) dans un
+> sidecar Python, activé par `MOTEUR_OCR=paddleocr` (voir
+> [`packages/condensation`](packages/condensation) pour l'installer ; sans lui, le moteur
+> **factice** reste le défaut en développement). La Collecte, elle, ne reconnaît encore que le
+> total : c'est la prochaine étape.
 
 ## Voir travailler le pipeline
 
@@ -120,8 +122,9 @@ logs. C'est au consommateur de traduire pour l'utilisateur.
 | `image_trop_lourde` | 413 | Au-delà de `TAILLE_MAX_IMAGE` |
 | `image_trop_floue` | 422 | Photo trop floue pour être lue — reprendre la photo |
 | `aucun_texte` | 422 | Rien de lisible sur l'image — reprendre la photo |
-| `delai_depasse` | 504 | La distillation a dépassé `DELAI_DISTILLATION_MS` |
+| `delai_depasse` | 504 | La distillation a dépassé `DELAI_DISTILLATION_MS`, ou le moteur OCR `DELAI_OCR_MS` |
 | `surcharge` | 429 / 503 | Trop de requêtes, ou plus aucun ouvrier disponible |
+| `moteur_indisponible` | 503 | Le moteur OCR (sidecar) ne répond pas — réessayer plus tard |
 | `erreur_interne` | 500 | Panne — le détail reste dans les logs |
 
 ## Commandes
@@ -138,6 +141,13 @@ Calibrer la Chauffe sur un dossier de photos (voir [`packages/chauffe`](packages
 
 ```bash
 npm run banc -- corpus
+```
+
+Mesurer la Condensation sur le même corpus (voir
+[`packages/condensation`](packages/condensation)) :
+
+```bash
+npm run banc:condensation -- corpus
 ```
 
 ```bash

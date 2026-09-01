@@ -20,3 +20,7 @@ dist/
 # Corpus de calibration : des photos de vrais recus, souvent personnelles, parfois lourdes.
 # Le banc s'en sert pour caler les seuils de la Chauffe ; elles ne se versionnent pas.
 corpus/
+
+# Python du sidecar : le venv est propre au poste, le cache de bytecode aussi.
+packages/*/sidecar/.venv/
+__pycache__/

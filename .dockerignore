@@ -12,3 +12,7 @@ node_modules
 # l'importe pas, et `npm ci --omit=dev` n'installe pas ses dependances. L'exclure ici enleve
 # aussi son code et sa page de l'image.
 packages/hublot
+
+# Python du poste : l'image construit son propre venv dans /opt/ocr.
+packages/*/sidecar/.venv
+**/__pycache__

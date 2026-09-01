@@ -5,7 +5,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/node_modules", "!**/*.md"]
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/*.md", "!**/sidecar/.venv"]
   },
   "formatter": {
     "enabled": true,
