@@ -49,6 +49,11 @@ COPY packages/condensation/package.json ./packages/condensation/
 COPY packages/collecte/package.json ./packages/collecte/
 COPY packages/api/package.json ./packages/api/
 
+# Le postinstall de la racine prepare les venvs des sidecars. Ici ils sont deja construits plus
+# haut, et CHEMIN_PYTHON_OCR / CHEMIN_PYTHON_COLLECTE le lui disent ; le script doit tout de
+# meme exister pour que npm ci aboutisse.
+COPY outils/preparer-sidecars.ts ./outils/
+
 # sharp s'installe par binaires precompiles sur node:22-slim (linux glibc x64 et arm64) :
 # aucune chaine de compilation ni paquet libvips a ajouter a l'image.
 RUN npm ci --omit=dev

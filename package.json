@@ -10,6 +10,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "postinstall": "tsx outils/preparer-sidecars.ts",
     "dev": "npm run dev --workspace=packages/api",
     "start": "npm run start --workspace=packages/api",
     "build": "npm run build --workspaces --if-present",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "tsx": "^4.22.4"
   }
 }
