@@ -1,7 +1,7 @@
 import { type Apercu, GENRE_APERCU } from '@alambic/noyau'
 import { depuis, type Etat } from './etat'
 
-// Assez grand pour juger un seuillage a l'oeil, assez petit pour qu'une dizaine de vignettes
+// Assez grand pour juger un recadrage a l'oeil, assez petit pour qu'une dizaine de vignettes
 // voyagent en base64 sans alourdir le flux.
 const LARGEUR_VIGNETTE = 800
 

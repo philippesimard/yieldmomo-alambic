@@ -18,7 +18,7 @@ const ANGLE_NEGLIGEABLE = 0.2
 
 const POINTS_MAX = 40_000
 
-// La meme fenetre que la binarisation : c'est le texte qu'on veut isoler, pas le document sur
+// Une fenetre a l'echelle du texte : c'est lui qu'on veut isoler, pas le document sur
 // son fond. Un seuil global prendrait le fond de table pour de l'encre et mesurerait l'angle
 // d'une nappe.
 const PART_FENETRE = 0.05

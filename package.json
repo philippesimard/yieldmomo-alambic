@@ -19,7 +19,8 @@
     "check:fix": "biome check --write .",
     "banc": "tsx outils/banc.ts",
     "banc:condensation": "tsx outils/banc-condensation.ts",
-    "banc:collecte": "tsx outils/banc-collecte.ts"
+    "banc:collecte": "tsx outils/banc-collecte.ts",
+    "mesure": "tsx outils/mesure.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",

@@ -25,7 +25,7 @@ précède ni celle qui la suit.
 
 | Étape | Package | Rôle |
 |---|---|---|
-| **Chauffe** | [`packages/chauffe`](packages/chauffe) | Rendre l'image lisible : redresser, aplanir, binariser, recadrer |
+| **Chauffe** | [`packages/chauffe`](packages/chauffe) | Isoler le document : recadrer, aplanir, redresser — sans binariser |
 | **Condensation** | [`packages/condensation`](packages/condensation) | Extraire tout le texte, avec sa position |
 | **Collecte** | [`packages/collecte`](packages/collecte) | Interpréter ce texte en facture |
 
@@ -165,6 +165,13 @@ Mesurer la Collecte sur le pipeline complet, et exporter les prédictions ré-an
 
 ```bash
 npm run banc:collecte -- corpus
+```
+
+Noter ces prédictions contre la vérité terrain du corpus (`corpus/verite.json`, relevée à l'œil
+sur chaque photo) — le banc dit ce que le pipeline a trouvé, la mesure dit s'il avait raison :
+
+```bash
+npm run mesure -- corpus
 ```
 
 ```bash

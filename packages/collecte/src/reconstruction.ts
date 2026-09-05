@@ -18,7 +18,9 @@ const FACTEUR_MARQUEUR = 0.7
 
 // Libelles d'impots tels qu'ils s'impriment. Le nom est rendu tel que lu (contrat TaxeSchema,
 // sans normalisation) : le lexique ne sert qu'a reperer la ligne.
-const LEXIQUE_TAXE = /\b(TPS|TVQ|TVH|GST|PST|QST|HST|TVA|TAXES?|TAX)\b/i
+// Les points de « T.P.S » sont ceux de l'acronyme, pas une autre taxe : les caisses des
+// epiceries l'impriment ainsi, et le nom rendu garde la graphie lue.
+const LEXIQUE_TAXE = /\b(T\.?P\.?S|T\.?V\.?Q|TVH|GST|PST|QST|HST|TVA|TAXES?|TAX)\b/i
 
 // Une taxe reconnue au lexique seul, sans etiquette du modele, est une lecture par regle : la
 // confiance en garde la trace, comme pour les reconnaisseurs.
@@ -31,8 +33,15 @@ const MENTION_TOTAL = /total/i
 // Lignes qui parlent du reglement, pas d'un article : jamais un article, quoi qu'en dise le
 // modele — en zero-shot il etiquette volontiers « TPS 1,45 » ou « MONTANT 17,00 » comme un
 // article de menu.
+//
+// Un rabais en fait partie : les epiceries l'impriment sur sa propre ligne et en POSITIF
+// (« RABAIS SUR LE PRIX COURANT : 2,82 $ »), sous l'article qu'il diminue. Le rendre comme un
+// article ferait compter deux fois, et dans le mauvais sens.
+//
+// « carte de » et non « carte » : c'est la ligne de reglement (« VENTE : CARTE DE CREDIT »)
+// qu'on ecarte, pas une carte-cadeau, qui est un article qu'on achete.
 const LIGNE_REGLEMENT =
-  /total|montant|solde|balance|paiement|payment|monnaie|change|approuv|credit|debit|visa|master|amex|interac/i
+  /total|montant|solde|balance|paiement|payment|monnaie|change|approuv|credit|debit|visa|master|amex|interac|rabais|remise|discount|economie|epargne|vente|carte de/i
 
 const POURCENTAGE = /(\d+(?:[.,]\d+)?)\s*%/
 
@@ -158,8 +167,11 @@ function reconstruireTotal(
   entites: readonly Entite[],
   lignes: readonly MotEtiquete[][],
 ): MontantTrouve | null {
+  // Le modele aussi se fait prendre par le bloc d'economies du pied de ticket : il etiquette
+  // « VALEUR TOTAL : 0,50 $ » comme le total. Une ligne qu'un marqueur ecarte n'est pas le
+  // total, quelle que soit la source qui l'affirme.
   const total = trouverMontant(entites, lignes, ETIQUETTE.total, null)
-  if (total !== null) return total
+  if (total !== null && !ecartee(total.ligne)) return total
 
   const parMarqueur =
     chercherMarqueur(lignes, MARQUEURS_TOTAL, MARQUEURS_ECARTES, null) ??
@@ -171,6 +183,12 @@ function reconstruireTotal(
     trouverMontant(entites, lignes, ETIQUETTE.totalComptant, null)
   if (paye === null) return null
   return { ...paye, confiance: paye.confiance * FACTEUR_REPLI_TOTAL }
+}
+
+function ecartee(ligne: readonly MotEtiquete[] | null): boolean {
+  if (ligne === null) return false
+  const normalise = texteDe(ligne).toLowerCase()
+  return MARQUEURS_ECARTES.some((marqueur) => normalise.includes(marqueur))
 }
 
 // La derniere ligne qui porte un marqueur et un montant lisible : c'est le pied de ticket qui
@@ -208,7 +226,15 @@ function reconstruireTaxes(entites: readonly Entite[], lignes: readonly MotEtiqu
   for (const entite of entites) {
     if (entite.etiquette !== ETIQUETTE.taxe) continue
     const ligne = ligneDe(lignes, entite)
-    const montant = montantDe(entite.texte) ?? (ligne === null ? null : montantDe(texteDe(ligne)))
+    // Une ligne ne porte qu'une taxe. Le modele y etiquette pourtant plusieurs nombres quand
+    // elle donne le taux et l'assiette (« T.P.S 5 % 35,37 @ 5,000 % 1,77 ») : sans ce garde-fou
+    // la meme taxe sort trois fois, assiette comprise, et le consommateur qui les additionne
+    // se trompe du tout au tout.
+    if (ligne !== null && lignesPrises.has(ligne)) continue
+
+    // Le montant se lit sur la LIGNE et non dans l'entite : sur un recu, la taxe est le dernier
+    // nombre de sa ligne, alors que l'entite peut tomber sur l'assiette ou sur le taux.
+    const montant = (ligne === null ? null : montantDe(texteDe(ligne))) ?? montantDe(entite.texte)
     if (montant === null) continue
 
     if (ligne !== null) lignesPrises.add(ligne)

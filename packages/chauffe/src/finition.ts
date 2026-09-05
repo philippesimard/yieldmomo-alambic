@@ -1,9 +1,10 @@
 import { apercusDe } from './apercus'
 import { BLANC, depuis, type Etat, enEtat, type Sortie } from './etat'
 
-// L'image est binaire a ce stade : le fond vaut exactement 255 et la tolerance ne sert qu'a
-// absorber les quelques pixels qu'un median a laisses en bordure.
-const TOLERANCE = 10
+// Le document arrive en gris : le papier n'est pas un blanc pur mais un clair legerement
+// ombre, et la tolerance doit l'absorber pour que le rognage voie une bordure la ou l'oeil en
+// voit une. Trop haute, elle mangerait le texte le plus pale.
+const TOLERANCE = 40
 
 // La marge n'est pas cosmetique : la plupart des moteurs ocr degradent sur du texte colle au
 // bord, faute de contexte autour du premier et du dernier caractere.

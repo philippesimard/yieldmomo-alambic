@@ -1,7 +1,7 @@
 # @alambic/chauffe — étape 1
 
 **Prépare l'image pour qu'un OCR puisse la lire.** Entrée : les octets bruts reçus. Sortie :
-une `ImageChauffee` — une image binarisée, redressée, recadrée, et un score de qualité.
+une `ImageChauffee` — le document en gris, redressé, recadré, et un score de qualité.
 
 ```ts
 const image = await chauffer(original)
@@ -25,7 +25,7 @@ qui suit travaille alors sur le document seul. Mesurer la netteté d'un reçu su
 restaurant flou par nature n'a aucun sens — c'est l'erreur qui laissait passer les photos
 bougées.
 
-## Les neuf sous-étapes
+## Les six sous-étapes
 
 | # | Sous-étape | Ce qu'elle fait |
 |---|---|---|
@@ -33,16 +33,36 @@ bougées.
 | 2 | `document` | Segmente le papier, en tire quatre coins, puis aplatit par homographie ou recadre |
 | 3 | `nettete` | Mesure le flou **dans le document**. Seule sous-étape qui peut refuser |
 | 4 | `redressement` | Inclinaison résiduelle du texte, par projection de profil, puis rotation |
-| 5 | `contraste` | CLAHE — égalise l'éclairage **local**, ce qui sauve un reçu à moitié dans l'ombre |
-| 6 | `binarisation` | Seuillage adaptatif : chaque pixel comparé à la moyenne de son voisinage |
-| 7 | `debruitage` | Médian 3×3 — efface les points isolés sans manger les jambages |
-| 8 | `finition` | Retire la marge blanche restante et pose une bordure régulière |
-| 9 | `encodage_png` | Sans perte — un artefact JPEG sur un caractère se paie en montant faux |
+| 5 | `finition` | Retire la marge restante et pose une bordure régulière |
+| 6 | `encodage_png` | Sans perte — un artefact JPEG sur un caractère se paie en montant faux |
 
 Chaque sous-étape est écrite **une seule fois**, dans son propre fichier, et rend une `Sortie`.
 Le pilote (`chauffe.ts`) les enchaîne, les chronomètre et les publie dans la trace. Les aperçus
 sont produits par une closure que la production n'appelle jamais : **observer ne coûte rien
 quand personne ne regarde**.
+
+## La Chauffe ne binarise pas, et c'est mesuré
+
+Elle l'a fait : CLAHE, seuillage adaptatif, médian 3×3. Ces trois gestes servent un OCR
+classique, qui a besoin qu'on lui sépare l'encre du papier. **PP-OCRv5 apprend sur des
+photographies et fait ce tri lui-même** — beaucoup mieux, puisqu'il lui reste les niveaux de
+gris que le seuillage jetait.
+
+Mesuré sur le corpus, en cherchant dans le texte OCR les 73 montants relevés à la main :
+
+| Image donnée à l'OCR | Montants retrouvés | Confiance OCR moyenne |
+|---|---|---|
+| Sortie du `redressement` (gris) | **72 / 73** | **0,96** |
+| Après CLAHE | 62 / 73 | 0,93 |
+| Après binarisation | 57 / 73 | 0,79 |
+| Après débruitage et finition | 53 / 73 | 0,85 |
+
+Un quart des montants disparaissait entre le redressement et la sortie. La Chauffe **s'arrête
+donc au redressement** et rend le document en gris. Elle y gagne aussi du temps : 394 ms en
+moyenne contre 479 ms.
+
+Ce que la Chauffe garde est ce que le moteur ne sait pas faire : **trouver le document** dans
+la photo, le **redresser**, et **refuser** ce qui est trop flou pour être lu.
 
 ## Deux mesures qui ne sont pas les mesures évidentes
 
@@ -72,8 +92,8 @@ l'image — et on se contente de recadrer.
 
 ## Score de qualité
 
-`ImageChauffee.qualite`, entre 0 et 1 : le **minimum** des sous-scores de `document`, `nettete`
-et `binarisation` — c'est le maillon faible qui détermine la lisibilité, pas la moyenne. Il est
+`ImageChauffee.qualite`, entre 0 et 1 : le **minimum** des sous-scores de `document` et
+`nettete` — c'est le maillon faible qui détermine la lisibilité, pas la moyenne. Il est
 journalisé avec les autres mesures et ne part pas dans la réponse au consommateur.
 
 Il descend notamment quand la région trouvée est peu convexe, signe que le document se confond

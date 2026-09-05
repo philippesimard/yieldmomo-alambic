@@ -9,8 +9,9 @@ export const MARQUEURS_MONTANT = ['montant', 'amount'] as const
 
 // Ecarte les lignes qui contiennent « total » sans etre LE total. Sans ce filtre, un
 // sous-total imprime au-dessus ecraserait le vrai montant, puisqu'on garde la derniere
-// correspondance.
-export const MARQUEURS_ECARTES = ['sous', 'sub'] as const
+// correspondance — et le pied des recus d'epicerie imprime APRES le total un bloc d'economies
+// (« VALEUR TOTAL : 0,50 $ ») qui ecraserait tout.
+export const MARQUEURS_ECARTES = ['sous', 'sub', 'valeur', 'economie', 'epargne'] as const
 
 // Ce qui designe le sous-total, dans toutes ses graphies imprimees.
 export const MARQUEURS_SOUS_TOTAL = [

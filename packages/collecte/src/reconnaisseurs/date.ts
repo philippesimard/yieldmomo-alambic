@@ -8,10 +8,14 @@ const FACTEUR_DATE_SURE = 0.9
 // la confiance en garde la trace.
 const FACTEUR_DATE_AMBIGUE = 0.6
 
+// Un recu ne vient pas du futur, et on ne photographie pas un ticket vieux de plusieurs
+// annees : c'est ce qui permet de trancher « 26/09/02 » entre 2026-09-02 et 2002-09-26.
+const ANS_PLAUSIBLES = 3
+
 const ISO = /\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b/
 const JOUR_MOIS_ANNEE = /\b(\d{1,2})[-/.](\d{1,2})[-/.](20\d{2}|\d{2})\b/
-const JOUR_MOIS_ECRIT_ANNEE = /\b(\d{1,2})(?:er)?\s+([a-z]+)\.?\s+(20\d{2})\b/
-const MOIS_ECRIT_JOUR_ANNEE = /\b([a-z]+)\.?\s+(\d{1,2}),?\s+(20\d{2})\b/
+const JOUR_MOIS_ECRIT_ANNEE = /\b(\d{1,2})(?:er)?[\s-]+([a-z]+)\.?[\s-]+(20\d{2})\b/
+const MOIS_ECRIT_JOUR_ANNEE = /\b([a-z]+)\.?[\s-]+(\d{1,2}),?[\s-]+(20\d{2})\b/
 
 // La plage des signes combinants (U+0300 a U+036F), retires apres decomposition NFD.
 const DIACRITIQUES = /[̀-ͯ]/g
@@ -114,12 +118,18 @@ function dateChiffree(normalise: string): DateLue | null {
 
   const premier = Number(chiffres[1])
   const second = Number(chiffres[2])
-  const annee = anneeComplete(Number(chiffres[3]))
+  const troisieme = chiffres[3] ?? ''
+  const annee = anneeComplete(Number(troisieme))
 
   // Un champ au-dela de 12 ne peut pas etre un mois : il tranche l'ordre a lui seul.
   if (premier > 12) {
-    const valeur = valider(annee, second, premier)
-    return valeur === null ? null : { valeur, facteur: FACTEUR_DATE_SURE }
+    // Mais il reste deux lectures : jour d'abord (« 26/08/19 » = 26 aout 2019) ou annee
+    // d'abord (= 19 aout 2026), ce qu'impriment beaucoup de terminaux. Un troisieme champ a
+    // quatre chiffres est forcement l'annee et ferme la question.
+    const jourDabord = valider(annee, second, premier)
+    const anneeDabord =
+      troisieme.length === 4 ? null : valider(anneeComplete(premier), second, Number(troisieme))
+    return trancher(jourDabord, anneeDabord)
   }
   if (second > 12) {
     const valeur = valider(annee, premier, second)
@@ -127,6 +137,30 @@ function dateChiffree(normalise: string): DateLue | null {
   }
   const valeur = valider(annee, second, premier)
   return valeur === null ? null : { valeur, facteur: FACTEUR_DATE_AMBIGUE }
+}
+
+// Entre deux lectures que la forme ne separe pas, la vraisemblance tranche : celle qui tombe
+// dans la fenetre des recus qu'on photographie l'emporte. Quand les deux y tombent ou qu'aucune
+// n'y tombe, on garde jour/mois/annee, l'usage au Quebec — et la confiance dit que c'est un
+// choix, pas une lecture.
+function trancher(jourDabord: string | null, anneeDabord: string | null): DateLue | null {
+  if (anneeDabord === null) {
+    return jourDabord === null ? null : { valeur: jourDabord, facteur: FACTEUR_DATE_SURE }
+  }
+  if (jourDabord === null) return { valeur: anneeDabord, facteur: FACTEUR_DATE_SURE }
+
+  const plausibles = [jourDabord, anneeDabord].filter(plausible)
+  if (plausibles.length === 1 && plausibles[0] !== undefined) {
+    return { valeur: plausibles[0], facteur: FACTEUR_DATE_AMBIGUE }
+  }
+  return { valeur: jourDabord, facteur: FACTEUR_DATE_AMBIGUE }
+}
+
+function plausible(valeur: string): boolean {
+  const date = Date.parse(`${valeur}T00:00:00Z`)
+  const maintenant = Date.now()
+  const plancher = maintenant - ANS_PLAUSIBLES * 365.25 * 24 * 60 * 60 * 1000
+  return date <= maintenant && date >= plancher
 }
 
 // « 26 » s'imprime pour 2026 : les recus ne datent pas du siecle dernier.
