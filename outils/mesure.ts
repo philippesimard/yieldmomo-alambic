@@ -18,7 +18,16 @@ const SUFFIXE_EXPORT = '--collecte.json'
 // Les montants se comparent au cent : l'ocr rend le montant imprime, pas un arrondi.
 const TOLERANCE = 0.005
 
-const CHAMPS_SIMPLES = ['marchand', 'date', 'devise', 'sousTotal', 'total', 'carte'] as const
+const CHAMPS_SIMPLES = [
+  'marchand',
+  'date',
+  'devise',
+  'sousTotal',
+  'total',
+  'carte',
+  'categorie',
+  'sousCategorie',
+] as const
 
 type Attendu = {
   marchand: string | null
@@ -27,6 +36,10 @@ type Attendu = {
   sousTotal: number | null
   total: number | null
   carte: string | null
+  // Nulles quand l'enseigne ne permet pas de conclure — le verdict `vide` les sort alors du
+  // denominateur, comme pour tout champ que le recu n'imprime pas.
+  categorie: string | null
+  sousCategorie: string | null
   taxes: number[]
   articles: number
 }
@@ -89,6 +102,11 @@ function noter(facture: Facture, attendu: Attendu): Map<string, Note> {
   notes.set('sousTotal', noterMontant(facture.sousTotal?.valeur ?? null, attendu.sousTotal))
   notes.set('total', noterMontant(facture.total?.valeur ?? null, attendu.total))
   notes.set('carte', noterTexte(facture.carte?.valeur ?? null, attendu.carte))
+  notes.set('categorie', noterTexte(facture.categorie?.valeur ?? null, attendu.categorie))
+  notes.set(
+    'sousCategorie',
+    noterTexte(facture.sousCategorie?.valeur ?? null, attendu.sousCategorie),
+  )
   notes.set('taxes', noterTaxes(facture, attendu))
   notes.set('articles', noterArticles(facture, attendu))
   return notes

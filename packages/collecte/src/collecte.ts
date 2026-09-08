@@ -11,6 +11,7 @@ import { ETIQUETTE, epurer, type MotEtiquete } from './etiquettes'
 import type { MoteurEtiquetage } from './moteur'
 import { decouperEnMots } from './mots'
 import { reconnaitreCarte } from './reconnaisseurs/carte'
+import { reconnaitreCategorie } from './reconnaisseurs/categorie'
 import { reconnaitreDate } from './reconnaisseurs/date'
 import { reconnaitreDevise } from './reconnaisseurs/devise'
 import { reconnaitreMarchand } from './reconnaisseurs/marchand'
@@ -97,8 +98,10 @@ export async function collecter(
 
   const finReconnaisseurs = traceur?.demarrer(SOUS_ETAPE.reconnaisseurs)
   const lignesBlocs = grouperEnLignes(condensat.blocs)
+  const marchand = reconnaitreMarchand(lignesBlocs)
+  const nature = reconnaitreCategorie(marchand)
   const facture: Facture = {
-    marchand: reconnaitreMarchand(lignesBlocs),
+    marchand,
     date: reconnaitreDate(lignesBlocs),
     devise: reconnaitreDevise(lignesBlocs),
     sousTotal: montants.sousTotal,
@@ -106,6 +109,8 @@ export async function collecter(
     total: montants.total,
     carte: reconnaitreCarte(lignesBlocs),
     articles: montants.articles,
+    categorie: nature.categorie,
+    sousCategorie: nature.sousCategorie,
   }
   const nuls = champsNuls(facture)
   finReconnaisseurs?.({
@@ -122,6 +127,8 @@ export async function collecter(
           date: facture.date?.valeur ?? null,
           devise: facture.devise?.valeur ?? null,
           carte: facture.carte?.valeur ?? null,
+          categorie: facture.categorie?.valeur ?? null,
+          sousCategorie: facture.sousCategorie?.valeur ?? null,
           champsNuls: nuls,
         },
       },

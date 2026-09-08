@@ -29,6 +29,95 @@ export const TYPE_CARTE = {
 
 export type TypeCarte = (typeof TYPE_CARTE)[keyof typeof TYPE_CARTE]
 
+// Nature de la depense. Les valeurs sont exactement les `GroupeCategorie` du catalogue de
+// YieldMomo, et les sous-categories ses `CategorieTransaction` : le consommateur rapproche les
+// cles telles quelles, sans table de correspondance. Le groupe `revenus` du catalogue est
+// absent — une photo de recu est une depense, et garder les categories de revenu ne ferait
+// qu'ouvrir la porte aux faux positifs (« VISA » imprime par un terminal deviendrait un
+// remboursement de dette).
+export const CATEGORIE = {
+  logement: 'logement',
+  telecom: 'telecom',
+  alimentation: 'alimentation',
+  transport: 'transport',
+  sante: 'sante',
+  personnel: 'personnel',
+  loisirs: 'loisirs',
+  famille: 'famille',
+  education: 'education',
+  finances: 'finances',
+  divers: 'divers',
+} as const
+
+export type Categorie = (typeof CATEGORIE)[keyof typeof CATEGORIE]
+
+// Chaque sous-categorie et le groupe dont elle releve. Une seule table plutot que deux enums
+// cote a cote : le groupe se deduit de la sous-categorie, jamais l'inverse, et les deux ne
+// peuvent donc pas diverger.
+export const SOUS_CATEGORIES = {
+  loyer: CATEGORIE.logement,
+  hypotheque: CATEGORIE.logement,
+  'assurance-habitation': CATEGORIE.logement,
+  electricite: CATEGORIE.logement,
+  chauffage: CATEGORIE.logement,
+  'entretien-maison': CATEGORIE.logement,
+  'meubles-deco': CATEGORIE.logement,
+
+  internet: CATEGORIE.telecom,
+  cellulaire: CATEGORIE.telecom,
+
+  epicerie: CATEGORIE.alimentation,
+  restaurant: CATEGORIE.alimentation,
+  'livraison-repas': CATEGORIE.alimentation,
+  cafe: CATEGORIE.alimentation,
+  alcool: CATEGORIE.alimentation,
+
+  vehicule: CATEGORIE.transport,
+  essence: CATEGORIE.transport,
+  'assurance-auto': CATEGORIE.transport,
+  'entretien-vehicule': CATEGORIE.transport,
+  stationnement: CATEGORIE.transport,
+  'transport-commun': CATEGORIE.transport,
+  taxi: CATEGORIE.transport,
+
+  medicaments: CATEGORIE.sante,
+  'soins-medicaux': CATEGORIE.sante,
+  dentiste: CATEGORIE.sante,
+  sport: CATEGORIE.sante,
+
+  vetements: CATEGORIE.personnel,
+  'soins-personnels': CATEGORIE.personnel,
+
+  streaming: CATEGORIE.loisirs,
+  'jeux-video': CATEGORIE.loisirs,
+  sorties: CATEGORIE.loisirs,
+  lecture: CATEGORIE.loisirs,
+  voyages: CATEGORIE.loisirs,
+
+  'garde-enfants': CATEGORIE.famille,
+  animaux: CATEGORIE.famille,
+  'cadeaux-offerts': CATEGORIE.famille,
+  dons: CATEGORIE.famille,
+
+  scolarite: CATEGORIE.education,
+  formation: CATEGORIE.education,
+
+  epargne: CATEGORIE.finances,
+  'remboursement-dette': CATEGORIE.finances,
+  'frais-bancaires': CATEGORIE.finances,
+  impots: CATEGORIE.finances,
+
+  'autre-depense': CATEGORIE.divers,
+} as const satisfies Record<string, Categorie>
+
+export type SousCategorie = keyof typeof SOUS_CATEGORIES
+
+// Sur : les cles de SOUS_CATEGORIES sont exactement les SousCategorie, et la table en compte au
+// moins une. z.enum ne peut pas lire les cles d'un objet, seulement ses valeurs.
+export const SousCategorieSchema = z.enum(
+  Object.keys(SOUS_CATEGORIES) as [SousCategorie, ...SousCategorie[]],
+)
+
 // Une ligne porte sa confiance en bloc plutot que champ par champ : le moteur la lit d'un
 // seul tenant, et une confiance par cellule serait une precision qu'aucun ocr ne fournit.
 export const ArticleSchema = z.object({
@@ -62,6 +151,13 @@ export const FactureSchema = z.object({
   total: extrait(MontantSchema).nullable(),
   carte: extrait(z.enum(TYPE_CARTE)).nullable(),
   articles: z.array(ArticleSchema),
+  // Les deux champs sont nullables separement, et l'invariant ne va que dans un sens : une
+  // sousCategorie implique sa categorie (SOUS_CATEGORIES[sousCategorie] === categorie.valeur),
+  // la reciproque est fausse. Un recu peut designer son groupe sans lever l'ambiguite en
+  // dessous — « TIM HORTONS » est de l'alimentation, sans qu'on sache dire restaurant ou cafe.
+  // Rendre le groupe seul vaut mieux que tout perdre.
+  categorie: extrait(z.enum(CATEGORIE)).nullable(),
+  sousCategorie: extrait(SousCategorieSchema).nullable(),
 })
 
 export type Article = z.infer<typeof ArticleSchema>
@@ -79,4 +175,6 @@ export const FACTURE_VIDE: Facture = {
   total: null,
   carte: null,
   articles: [],
+  categorie: null,
+  sousCategorie: null,
 }

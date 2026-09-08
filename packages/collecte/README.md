@@ -24,8 +24,8 @@ Quatre sous-étapes, dans l'ordre :
    les entités deviennent sousTotal, taxes, total et articles. Pur et déterministe.
 4. **Reconnaisseurs** (`reconnaisseurs/`). Ce que CORD ne couvre pas se lit par règles :
    marchand (premières lignes nommables), date (formats fr/en → ISO), devise (codes et
-   symboles), carte (lexique VISA/MASTERCARD/AMEX/INTERAC → `TYPE_CARTE` normalisé). Purs et
-   déterministes aussi.
+   symboles), carte (lexique VISA/MASTERCARD/AMEX/INTERAC → `TYPE_CARTE` normalisé), catégorie
+   (mots-clés d'enseignes → `CATEGORIE` / `SOUS_CATEGORIES`). Purs et déterministes aussi.
 
 La *reconstruction* et les *reconnaisseurs* restent des fonctions pures : mêmes entrées, mêmes
 résultats, vérifiables avec un condensat écrit à la main. Seul l'étiquetage est asynchrone, et
@@ -91,6 +91,34 @@ qu'elle est déduite, pas lue.
 
 Les confiances croisent les deux sources : score softmax du modèle × confiance OCR du maillon
 faible. Une étiquette sûre posée sur un texte mal lu reste douteuse.
+
+## La catégorie
+
+La nature de la dépense se lit sur **l'enseigne seule**. `mots-cles-categories.ts` porte 778
+marchands et termes, repris du catalogue de YieldMomo — les clés sont les siennes, ce sont ses
+`CategorieTransaction`. C'est une **copie**, pas un import : les deux dépôts sont indépendants,
+et la table dérivera de sa source si personne ne la rafraîchit.
+
+Deux choses la distinguent de sa source, parce que là-bas un humain tranche l'ambiguïté en
+cliquant et qu'ici personne ne tranche :
+
+- **Les catégories de revenu sont absentes**, du contrat comme de la table. Une photo de reçu est
+  une dépense, et les garder n'ouvrait que des faux positifs — « VISA » imprimé par un terminal
+  serait devenu un remboursement de dette.
+- **La comparaison se fait par mots entiers**, sur des fenêtres de mots, la plus longue d'abord.
+  Le `includes` bidirectionnel de la source est fait pour des requêtes tapées courtes ; appliqué
+  à une enseigne, il ferait de « Vinaigrerie » de l'alcool et de « La Belle Province » un
+  fournisseur internet. La fenêtre la plus longue gagne, donc « costco essence » l'emporte sur
+  « costco ».
+
+Les collisions volontaires de la source sont conservées, et c'est le reconnaisseur qui en décide :
+une seule candidate donne catégorie et sous-catégorie ; plusieurs candidates d'un même groupe ne
+donnent que le groupe ; plusieurs groupes ne donnent rien.
+
+Les libellés d'articles ont été essayés comme seconde source, puis retirés : ils nomment un
+produit et non la nature du commerce. Sur le corpus, ils ne classaient que deux reçus de plus, et
+les deux à tort — « BIERE THE DU LABRADOR » faisait de l'épicerie de l'alcool, « PIZZA GARNIE
+BACON » en faisait un restaurant.
 
 ## Mesurer
 

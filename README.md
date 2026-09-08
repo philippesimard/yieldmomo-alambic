@@ -86,7 +86,9 @@ Réponse :
   "carte": { "valeur": "visa", "confiance": 0.87 },
   "articles": [
     { "libelle": "Cafe filtre moyen", "quantite": null, "prixUnitaire": null, "montant": 3.25, "confiance": 0.9 }
-  ]
+  ],
+  "categorie": { "valeur": "alimentation", "confiance": 0.56 },
+  "sousCategorie": { "valeur": "cafe", "confiance": 0.56 }
 }
 ```
 
@@ -95,6 +97,17 @@ facture partielle vaut mieux que refuser la requête. Chaque champ porte sa **co
 que l'appelant sache quoi faire confirmer à l'utilisateur. `carte` est le réseau de la carte de
 paiement, normalisé (`visa`, `mastercard`, `amex`, `interac`, `autre`) — `null` si comptant ou
 illisible.
+
+`categorie` et `sousCategorie` disent la nature de la dépense, déduite de l'enseigne. Les clés
+sont celles du catalogue de YieldMomo : `categorie` est un groupe (`alimentation`, `transport`…),
+`sousCategorie` une de ses catégories (`epicerie`, `essence`…). Une sous-catégorie implique
+toujours sa catégorie ; l'inverse est faux, et c'est voulu.
+
+**Un `null` ici est un refus de trancher, pas un échec de lecture.** Une catégorie fausse coûte
+plus cher au consommateur qu'une catégorie absente : quand l'enseigne désigne plusieurs
+catégories d'un même groupe, on rend le groupe seul (« TIM HORTONS » est de l'alimentation, sans
+qu'on sache dire restaurant ou café) ; quand elle en désigne de groupes différents, on ne rend
+rien. Les enseignes hors catalogue — la majorité — tombent aussi sur `null`.
 
 > **État actuel :** la Condensation lit avec **PaddleOCR** (PP-OCRv5) et la Collecte structure
 > avec **LayoutLMv3** (token classification, checkpoint CORD zero-shot) — chacun dans son
