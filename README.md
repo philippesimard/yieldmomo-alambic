@@ -261,6 +261,62 @@ npm run mesure -- corpus
 npm run check:fix
 ```
 
+## Déploiement
+
+Alambic tourne dans une image unique — Node, le sidecar OCR et le sidecar d'étiquetage, chacun
+dans son propre venv — construite par Dokploy sur le serveur, depuis le dépôt git.
+
+**Plateforme : `linux/amd64` seulement.** PaddlePaddle ne publie pas de roue linux arm64. C'est
+la raison de laisser le serveur construire ; depuis un Mac Apple Silicon il faut
+`docker build --platform linux/amd64 .`, et l'émulation coûte très cher sur une image de cette
+taille.
+
+### Le modèle de la Collecte
+
+Le checkpoint maison pèse plus d'un Go : il ne se versionne pas et vit sur un bucket compatible
+S3 (OVH Object Storage). L'y déposer :
+
+```bash
+npm run publier-modele -- --bucket <bucket>
+```
+
+La commande compresse `outils/entrainement/modeles/lilt-alambic`, refuse d'écraser un objet
+déjà publié — une image de production l'a peut-être déjà consommé — et imprime en sortie la
+ligne `MODELE_S3_URI` à recopier dans Dokploy. Les clés d'accès viennent de la chaîne habituelle
+du SDK (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, ou `~/.aws/credentials`) ; le dépôt n'en
+lit ni n'en stocke aucune.
+
+**L'image descend ce modèle au build, jamais à l'exécution.** C'est ce qui garde le service sans
+état — rien ne s'écrit sur disque, rien ne dépend du réseau au démarrage, deux répliques sont
+identiques — et ce qui évite qu'une clé S3 traîne sur le serveur.
+
+Une image construite sans `MODELE_S3_URI` embarque à la place le checkpoint public entraîné sur
+CORD, qui travaille en zéro-shot sur un reçu québécois : commode pour un essai, jamais pour la
+production. C'est précisément le genre de panne qui ne se voit pas — le modèle public *charge*
+et rend des factures, simplement moins bien lues — donc le démarrage en `NODE_ENV=production`
+est **refusé** si `MODELE_COLLECTE` n'est pas renseignée.
+
+### Réglages Dokploy
+
+| Onglet | Réglage | Valeur |
+| --- | --- | --- |
+| General | Build Type | `Dockerfile` |
+| General | Dockerfile Path | `Dockerfile` |
+| General | Docker Context Path | `.` |
+| Domains | Container Port | `3100` |
+| Environment | Build Time Arguments | `MODELE_S3_URI`, et au besoin `S3_ENDPOINT` / `S3_REGION` |
+| Environment | Build-time Secrets | `S3_CLE`, `S3_SECRET` |
+| Environment | Environment Variables | le contenu de [.env.production.exemple](.env.production.exemple) |
+
+Les clés S3 passent par les **secrets** de build et non par les arguments : un argument reste
+lisible dans `docker history` de l'image produite, un secret ne laisse rien.
+
+`SAUTS_PROXY=1` : Traefik est le seul saut devant le service, et c'est lui qui pose le vrai
+`X-Forwarded-For`. Sans ça, la limitation de débit compterait tout le trafic sur l'IP du proxy.
+
+Le service n'est jamais joint par un navigateur : seule l'API de YieldMomo l'appelle, avec le
+secret partagé `ALAMBIC_CLE` dans l'en-tête `x-cle-alambic`.
+
 ## Conventions
 
 Reprises du dépôt YieldMomo, voir [CLAUDE.md](CLAUDE.md) : Node 22, npm workspaces, TypeScript

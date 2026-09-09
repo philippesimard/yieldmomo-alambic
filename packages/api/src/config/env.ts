@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { ENVIRONNEMENT } from '@alambic/noyau'
@@ -41,8 +42,9 @@ const CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT = fileURLToPath(
   new URL('../../../collecte/sidecar/.venv/bin/python', import.meta.url),
 )
 
-// Checkpoint LiLT (licence MIT) fine-tune sur CORD (recus). Configurable pour accueillir le
-// futur modele fine-tune maison sans toucher au code.
+// Checkpoint LiLT (licence MIT) fine-tune sur CORD, des recus anglais et indonesiens : il
+// travaille donc en zero-shot sur un recu quebecois. Defaut de developpement seulement — en
+// production le modele maison est exige, voir le controle plus bas.
 const MODELE_COLLECTE_PAR_DEFAUT = 'doc2txt/tst_lilt_cord_xlm_ft'
 
 // Un ouvrier de moins que de coeurs : le thread principal doit garder de quoi accepter les
@@ -100,7 +102,9 @@ const EnvSchema = z
     PORT_SIDECAR_COLLECTE: z.coerce.number().int().positive().default(3103),
     DELAI_COLLECTE_MS: z.coerce.number().int().positive().default(6_000),
     CHEMIN_PYTHON_COLLECTE: z.string().default(CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT),
-    MODELE_COLLECTE: z.string().default(MODELE_COLLECTE_PAR_DEFAUT),
+    // Optionnelle en developpement (defaut public, applique plus bas) ; exigee en production,
+    // ou le checkpoint public rendrait des factures moins bien lues sans que rien ne le dise.
+    MODELE_COLLECTE: z.string().optional(),
   })
   .superRefine((valeurs, contexte) => {
     // Chaque moteur doit abandonner avant que l'atelier tue l'ouvrier qui l'attend : sinon
@@ -149,6 +153,33 @@ const EnvSchema = z
           'MOTEUR_COLLECTE est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `lilt`.',
       })
     }
+
+    // Le seul echec silencieux du lot : le checkpoint public CHARGE, il est dans l'image, et
+    // rend des factures — simplement moins bien lues, en zero-shot sur un recu quebecois.
+    // Aucune sonde ne le verrait. L'image renseigne cette cle quand elle est construite avec
+    // MODELE_S3_URI ; la definir dans le tableau de bord ecraserait cette valeur.
+    if (valeurs.MODELE_COLLECTE === undefined) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['MODELE_COLLECTE'],
+        message:
+          'MODELE_COLLECTE est requise en production : sans elle, le service lirait les recus avec le checkpoint public, en zero-shot, sans rien signaler. Construire avec MODELE_S3_URI, et laisser cette cle absente du tableau de bord.',
+      })
+    }
+  })
+  // Bloc separe : celui du dessus sort tot hors production, alors qu'un chemin fautif se
+  // signale partout — c'est en developpement qu'on se trompe de dossier.
+  .superRefine((valeurs, contexte) => {
+    // Un checkpoint peut etre un identifiant hugging face ou un dossier local ; seul le second
+    // se verifie. Sans ce controle, un chemin fautif coute cinq redemarrages du sidecar puis un
+    // /ready bloque en 503, sans que rien ne dise pourquoi.
+    if (valeurs.MODELE_COLLECTE?.startsWith('/') && !existsSync(valeurs.MODELE_COLLECTE)) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['MODELE_COLLECTE'],
+        message: `Dossier de checkpoint introuvable : ${valeurs.MODELE_COLLECTE}`,
+      })
+    }
   })
   .transform((valeurs) => ({
     // Les defauts ne s'appliquent qu'en developpement : en production, l'absence a deja refuse
@@ -156,6 +187,7 @@ const EnvSchema = z
     ...valeurs,
     MOTEUR_OCR: valeurs.MOTEUR_OCR ?? MOTEUR_OCR.factice,
     MOTEUR_COLLECTE: valeurs.MOTEUR_COLLECTE ?? MOTEUR_COLLECTE.factice,
+    MODELE_COLLECTE: valeurs.MODELE_COLLECTE ?? MODELE_COLLECTE_PAR_DEFAUT,
   }))
 
 // Une cle laissee vide dans un gabarit ou dans le tableau de bord de deploiement vaut « non

@@ -24,6 +24,7 @@ entrainement/   fine-tune LiLT sur ces annotations
 npm run generer-recus -- --n 4000 --jobs 4   # écrit outils/jeu/ (~1,4 Go pour 4000 reçus)
 npm run entrainer-modele                     # lit outils/jeu/, écrit entrainement/modeles/
 npm run evaluer-modele -- --split test       # F1 à l'entité sur le split test
+npm run publier-modele -- --bucket <bucket>  # compresse et téléverse sur le bucket S3
 ```
 
 Aucune configuration n'est nécessaire : les chemins par défaut sont ancrés sur l'emplacement des
@@ -32,6 +33,10 @@ scripts, pas sur le répertoire courant. Pour mettre le modèle en service :
 ```bash
 MODELE_COLLECTE=$PWD/outils/entrainement/modeles/lilt-alambic npm run dev
 ```
+
+`publier-modele` est la seule de ces commandes qui touche à la production, et encore : elle ne
+fait que déposer l'archive que l'image ira chercher **au build**. Voir
+[`entrainement/README.md`](entrainement/README.md).
 
 Deux commandes secondaires : `npm run tester-recus` (la suite du générateur) et
 `npm run verifier-boites -- <image>` (redessine les boîtes sur un reçu, pour vérifier à l'œil que

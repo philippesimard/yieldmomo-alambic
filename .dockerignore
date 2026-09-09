@@ -16,3 +16,13 @@ packages/hublot
 # Python du poste : l'image construit son propre venv dans /opt/ocr.
 packages/*/sidecar/.venv
 **/__pycache__
+
+# Corpus de photos, jeu synthetique et checkpoints : gitignores, donc absents du clone que
+# Dokploy construit. Ici pour le `docker build` lance depuis un poste, qui enverrait sinon
+# plusieurs Go de contexte au demon avant meme de commencer.
+corpus
+outils/jeu
+outils/apercu
+outils/entrainement/modeles
+outils/.venv
+.claude
