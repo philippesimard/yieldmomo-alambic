@@ -5,7 +5,16 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/node_modules", "!**/*.md", "!**/sidecar/.venv"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/*.md",
+      "!**/.venv",
+      "!outils/jeu",
+      "!outils/apercu",
+      "!outils/entrainement/modeles"
+    ]
   },
   "formatter": {
     "enabled": true,

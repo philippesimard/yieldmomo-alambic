@@ -21,10 +21,18 @@ dist/
 # Le banc s'en sert pour caler les seuils de la Chauffe ; elles ne se versionnent pas.
 corpus/
 
-# Python du sidecar : le venv est propre au poste, le cache de bytecode aussi.
+# Python des sidecars et de l'outillage : les venvs sont propres au poste, les caches aussi.
 packages/*/sidecar/.venv/
+outils/.venv/
 __pycache__/
+.pytest_cache/
+*.egg-info/
+
+# Jeu de recus synthetiques produit par `npm run generer-recus` : plus d'un Go, entierement
+# reproductible a graine fixe sur une machine donnee.
+outils/jeu/
+outils/apercu/
 
 # Checkpoints produits par le fine-tuning de la Collecte : plusieurs centaines de Mo par
 # modele, reproductibles a partir du jeu de donnees et du script.
-packages/collecte/entrainement/modeles/
+outils/entrainement/modeles/

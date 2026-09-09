@@ -42,8 +42,8 @@ Le sidecar est volontairement bête : il reçoit `{ mots: [{texte, boite 0–100
 une étiquette et un score par mot. L'image ne transite pas : LiLT ne lit que le texte et la
 géométrie, et l'`ImageChauffee` ne sert à la Collecte qu'à normaliser les boîtes. Tout le
 reste — découpage, normalisation, reconstruction, confiances — vit côté node. Changer de
-checkpoint (le fine-tuning maison viendra) ne touche que `MODELE_COLLECTE` et la table
-`ETIQUETTE`.
+checkpoint ne touche que `MODELE_COLLECTE` et la table `ETIQUETTE` — c'est ainsi que le modele
+maison de `outils/entrainement` est entre en service.
 
 ## Installer le sidecar
 
@@ -141,6 +141,6 @@ est sous CC BY-NC-SA 4.0 et a été retiré pour cette raison.
 
 Le checkpoint par défaut, `doc2txt/tst_lilt_cord_xlm_ft`, est un fine-tuning communautaire
 (MIT, F1 0,957 sur CORD selon sa fiche), sans documentation et nommé « test ». Il suffit au
-zero-shot ; **le fine-tuning maison sur `SCUT-DLVCLab/lilt-infoxlm-base` ou
-`nielsr/lilt-xlm-roberta-base`, CORD puis corpus annoté, est la prochaine étape** — et le
-banc exporte déjà le format qu'il faut.
+zero-shot ; **le fine-tuning maison sur `SCUT-DLVCLab/lilt-infoxlm-base` a depuis livré**
+(F1 0,997 à l'entité sur le jeu synthétique) — voir
+[outils/entrainement](../../outils/entrainement/README.md).

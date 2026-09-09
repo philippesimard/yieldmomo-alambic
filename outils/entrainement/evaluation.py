@@ -1,8 +1,9 @@
 # Mesure un checkpoint sur un split, sans l'entrainer. Sert a juger sur le test une fois pour
 # toutes, quand la validation a fini de choisir.
 #
-#   .venv/bin/python evaluation.py --jeu <dossier-dataset> --modele modeles/lilt-alambic
+#   npm run evaluer-modele -- --split test
 import argparse
+from pathlib import Path
 
 from transformers import AutoTokenizer, LiltForTokenClassification
 
@@ -13,11 +14,17 @@ from mesures import formater, mesurer
 LONGUEUR_MAX = 512
 CHEVAUCHEMENT = 128
 
+# Ancres sur le fichier et non sur le cwd : npm lance depuis la racine du depot, et un defaut
+# relatif y ecrirait a cote.
+RACINE = Path(__file__).resolve().parent
+JEU_PAR_DEFAUT = RACINE.parent / 'jeu'
+MODELE_PAR_DEFAUT = RACINE / 'modeles' / 'lilt-alambic'
+
 
 def analyser_arguments():
     parseur = argparse.ArgumentParser()
-    parseur.add_argument('--jeu', required=True)
-    parseur.add_argument('--modele', required=True)
+    parseur.add_argument('--jeu', default=JEU_PAR_DEFAUT)
+    parseur.add_argument('--modele', default=MODELE_PAR_DEFAUT)
     parseur.add_argument('--split', default='test')
     parseur.add_argument('--lot', type=int, default=4)
     parseur.add_argument('--appareil', default='auto')

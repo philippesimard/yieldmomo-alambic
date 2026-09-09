@@ -66,6 +66,10 @@ fonction sans explication ; un pro n'y trouve rien à redire.
   `pool`, `buffer`, `router`, `middleware`).
 - **Les accents n'apparaissent jamais dans un identifiant ni dans un commentaire** — uniquement
   dans le texte affiché et dans les fichiers Markdown.
+- **Exception, `outils/recus/`** : les littéraux de chaîne y sont des *données* imprimées sur les
+  reçus engendrés (« Marché Richelieu », « café », « Conservez votre reçu »). Ils gardent leurs
+  accents. Les désaccentuer produirait un corpus qui ne ressemble plus à un reçu québécois, sans
+  qu'aucun test ne s'en aperçoive. Seuls les commentaires y suivent la règle générale.
 
 ### Règles
 

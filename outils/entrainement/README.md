@@ -12,7 +12,7 @@ Rien ici ne tourne en production. Le service ne fait que charger le dossier prod
 
 ## Le jeu de données
 
-Celui du générateur de reçus québécois synthétiques, dans son format natif :
+Celui de `../recus`, dans son format natif :
 
 ```
 <jeu>/
@@ -30,11 +30,15 @@ nouvelle entité, sans quoi deux articles voisins fusionneraient leurs libellés
 ## Entraîner
 
 ```bash
-../sidecar/.venv/bin/python entrainement.py --jeu ../../../../yieldmomo-alambic-receipe-generator/dataset
+npm run entrainer-modele
 ```
 
-Le venv est celui du sidecar : `torch` et `transformers` y sont déjà, l'entraînement n'ajoute
-aucune dépendance.
+Sans argument, il lit `outils/jeu` — la sortie de `npm run generer-recus` — et écrit dans
+`modeles/lilt-alambic`. Il refuse d'écraser un checkpoint existant sans `--ecraser` : le défaut
+est celui que le sidecar charge.
+
+Le venv est celui des outils (`outils/.venv`), préparé par `npm install` ; `torch` et
+`transformers` y sont aux versions du sidecar de la Collecte.
 
 | Option | Défaut | Rôle |
 | --- | --- | --- |
@@ -72,7 +76,7 @@ Trois réglages, dans l'ordre où ils comptent :
 `--lot 2` ne tient pas sur 8 Go en même temps qu'autre chose ; l'accumulation donne le même
 lot effectif sans la mémoire.
 
-Compter environ **une heure pour 5 époques** sur les 1600 reçus d'entraînement, sur un M2.
+Compter environ **deux heures pour 5 époques** sur les 3200 reçus d'entraînement, sur un M2.
 
 Après chaque époque, le script mesure sur `valid` et ne conserve que le meilleur passage : les
 époques suivantes peuvent surapprendre, et c'est ce dossier que le sidecar chargera.
@@ -80,7 +84,7 @@ Après chaque époque, le script mesure sur `valid` et ne conserve que le meille
 ## Mesurer
 
 ```bash
-../sidecar/.venv/bin/python evaluation.py --jeu <jeu> --modele modeles/lilt-alambic --split test
+npm run evaluer-modele -- --split test
 ```
 
 La mesure qui compte est le **F1 à l'entité**, pas l'exactitude au mot : la Collecte ne lit pas
@@ -90,13 +94,13 @@ juste au milieu d'une entité mal découpée ne sert à rien.
 ## Mettre en service
 
 ```bash
-MODELE_COLLECTE=/chemin/absolu/vers/modeles/lilt-alambic
+MODELE_COLLECTE=$PWD/outils/entrainement/modeles/lilt-alambic
 ```
 
 Puis `npm run dev`, ou le banc pour juger sur de vraies photos :
 
 ```bash
-npm run banc:collecte -- corpus --modele /chemin/absolu/vers/modeles/lilt-alambic
+npm run banc:collecte -- corpus --modele $PWD/outils/entrainement/modeles/lilt-alambic
 ```
 
 Le sidecar charge ce dossier sans rien changer à son code : le checkpoint embarque son

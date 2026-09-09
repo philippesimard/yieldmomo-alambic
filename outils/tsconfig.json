@@ -4,5 +4,6 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["."]
+  "include": ["."],
+  "exclude": ["jeu", "apercu", "entrainement/modeles"]
 }

@@ -4,7 +4,7 @@
 # a peu pres et ignore tout ce qui est quebecois (TPS, TVQ, INTERAC, marchands d'ici). Ce
 # script en produit un qui a vu le domaine, dans le format exact que le sidecar charge.
 #
-#   .venv/bin/python entrainement.py --jeu <dossier-dataset>
+#   npm run entrainer-modele
 #
 # Rien ici ne tourne en production : l'entrainement est un outil de poste, le service ne fait
 # que charger le dossier produit (MODELE_COLLECTE).
@@ -50,6 +50,12 @@ CHECKPOINTING = {'use_reentrant': False}
 # Au-dela, un gradient est une instabilite et non un apprentissage.
 NORME_MAX_GRADIENT = 1.0
 
+# Ancres sur le fichier et non sur le cwd : npm lance depuis la racine du depot, ou un defaut
+# relatif ecrirait le checkpoint a cote, hors de toute regle du .gitignore.
+RACINE = Path(__file__).resolve().parent
+JEU_PAR_DEFAUT = RACINE.parent / 'jeu'
+SORTIE_PAR_DEFAUT = RACINE / 'modeles' / 'lilt-alambic'
+
 PROPORTION_ECHAUFFEMENT = 0.06
 
 # Une vingtaine de lignes de progression par epoque, quelle que soit la taille du passage : un
@@ -59,9 +65,12 @@ LIGNES_PAR_EPOQUE = 20
 
 def analyser_arguments():
     parseur = argparse.ArgumentParser()
-    parseur.add_argument('--jeu', required=True, help='dossier du dataset (train/valid/test)')
+    parseur.add_argument('--jeu', default=JEU_PAR_DEFAUT, help='dossier du jeu (train/valid/test)')
     parseur.add_argument('--base', default=BASE_PAR_DEFAUT)
-    parseur.add_argument('--sortie', default='modeles/lilt-alambic')
+    parseur.add_argument('--sortie', default=SORTIE_PAR_DEFAUT)
+    parseur.add_argument(
+        '--ecraser', action='store_true', help='autorise l ecriture sur un checkpoint existant'
+    )
     parseur.add_argument('--epoques', type=int, default=5)
     parseur.add_argument('--lot', type=int, default=1)
     parseur.add_argument('--accumulation', type=int, default=16)
@@ -142,6 +151,18 @@ def principal():
     sys.stdout.reconfigure(line_buffering=True)
 
     options = analyser_arguments()
+
+    # Le defaut ecrit sur le checkpoint que le sidecar charge. Un essai court le remplacerait
+    # par un modele bien pire, et save_pretrained ne previent pas. Verifie avant de charger le
+    # modele de base, pour echouer en une seconde plutot qu'apres une heure.
+    if (Path(options.sortie) / 'config.json').exists() and not options.ecraser:
+        print(
+            f'{options.sortie} contient deja un checkpoint.\n'
+            'Choisis un autre --sortie, ou passe --ecraser pour le remplacer.',
+            file=sys.stderr,
+        )
+        return 2
+
     random.seed(options.graine)
     torch.manual_seed(options.graine)
 
@@ -211,7 +232,8 @@ def principal():
             print(f'checkpoint conserve dans {sortie} (F1 entites {meilleur:.4f})', flush=True)
 
     print(f'\nmeilleur F1 entites en validation : {meilleur:.4f}')
+    return 0
 
 
 if __name__ == '__main__':
-    principal()
+    sys.exit(principal())

@@ -110,8 +110,9 @@ rien. Les enseignes hors catalogue — la majorité — tombent aussi sur `null`
 > son sidecar Python, activés par `MOTEUR_OCR=paddleocr` et `MOTEUR_COLLECTE=lilt` (voir
 > [`packages/condensation`](packages/condensation) et [`packages/collecte`](packages/collecte)
 > pour installer les venvs ; sans eux, les moteurs **factices** restent le défaut en
-> développement). Le fine-tuning sur un corpus annoté maison est la prochaine étape ; le banc de
-> collecte exporte déjà les prédictions dans un format ré-annotable.
+> développement). Le fine-tuning maison a livré : `outils/` engendre un jeu de reçus québécois
+> synthétiques annotés puis entraîne le modèle que la Collecte charge — voir
+> [outils/README.md](outils/README.md).
 
 ## Voir travailler le pipeline
 
