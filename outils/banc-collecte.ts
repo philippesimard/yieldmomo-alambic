@@ -22,12 +22,12 @@ import { chauffer } from '@alambic/chauffe'
 import {
   boiteNormalisee,
   collecter,
-  creerMoteurLayoutlm,
+  creerMoteurLilt,
   ETIQUETTE,
   type MotEtiquete,
   type MoteurEtiquetage,
   moteurFacticeEtiquetage,
-  SIDECAR_LAYOUTLM,
+  SIDECAR_LILT,
   SOUS_ETAPES_COLLECTE,
 } from '@alambic/collecte'
 import {
@@ -50,14 +50,14 @@ const EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.avif', 
 const DOSSIER_SORTIES = 'sorties'
 
 const NOM_MOTEUR_OCR = { factice: 'factice', paddleocr: 'paddleocr' } as const
-const NOM_MOTEUR_COLLECTE = { factice: 'factice', layoutlmv3: 'layoutlmv3' } as const
+const NOM_MOTEUR_COLLECTE = { factice: 'factice', lilt: 'lilt' } as const
 
 // 3102 est deja le port du banc de condensation : les deux bancs peuvent tourner cote a cote
 // avec un `npm run dev` (3101, 3103) sans se marcher dessus.
 const PORT_BANC_OCR = 3102
 const PORT_BANC_COLLECTE = 3104
 
-const MODELE_PAR_DEFAUT = 'nielsr/layoutlmv3-finetuned-cord'
+const MODELE_PAR_DEFAUT = 'doc2txt/tst_lilt_cord_xlm_ft'
 
 const DELAI_LECTURE_MS = 60_000
 const DELAI_ETIQUETAGE_MS = 60_000
@@ -78,7 +78,7 @@ type Passage = {
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
   options: {
-    moteur: { type: 'string', default: NOM_MOTEUR_COLLECTE.layoutlmv3 },
+    moteur: { type: 'string', default: NOM_MOTEUR_COLLECTE.lilt },
     'moteur-ocr': { type: 'string', default: NOM_MOTEUR_OCR.paddleocr },
     detection: { type: 'string', default: 'mobile' },
     modele: { type: 'string', default: MODELE_PAR_DEFAUT },
@@ -91,11 +91,8 @@ if (moteurOcrChoisi !== NOM_MOTEUR_OCR.factice && moteurOcrChoisi !== NOM_MOTEUR
   process.stdout.write(`Moteur ocr inconnu : ${moteurOcrChoisi}. Choisir factice ou paddleocr.\n`)
   process.exit(1)
 }
-if (
-  values.moteur !== NOM_MOTEUR_COLLECTE.factice &&
-  values.moteur !== NOM_MOTEUR_COLLECTE.layoutlmv3
-) {
-  process.stdout.write(`Moteur inconnu : ${values.moteur}. Choisir factice ou layoutlmv3.\n`)
+if (values.moteur !== NOM_MOTEUR_COLLECTE.factice && values.moteur !== NOM_MOTEUR_COLLECTE.lilt) {
+  process.stdout.write(`Moteur inconnu : ${values.moteur}. Choisir factice ou lilt.\n`)
   process.exit(1)
 }
 
@@ -120,7 +117,7 @@ const moteurOcr: MoteurOcr =
 const moteurCollecte: MoteurEtiquetage =
   values.moteur === NOM_MOTEUR_COLLECTE.factice
     ? moteurFacticeEtiquetage
-    : creerMoteurLayoutlm({
+    : creerMoteurLilt({
         url: `http://127.0.0.1:${PORT_BANC_COLLECTE}`,
         delaiMs: DELAI_ETIQUETAGE_MS,
       })
@@ -155,15 +152,15 @@ if (moteurOcrChoisi === NOM_MOTEUR_OCR.paddleocr) {
     ),
   )
 }
-if (values.moteur === NOM_MOTEUR_COLLECTE.layoutlmv3) {
+if (values.moteur === NOM_MOTEUR_COLLECTE.lilt) {
   sidecars.push(
     await demarrerSidecar(
       'collecte',
       pythonDe('collecte'),
       PORT_BANC_COLLECTE,
-      SIDECAR_LAYOUTLM.routeSante,
+      SIDECAR_LILT.routeSante,
       [
-        SIDECAR_LAYOUTLM.chemin,
+        SIDECAR_LILT.chemin,
         '--port',
         String(PORT_BANC_COLLECTE),
         '--modele',

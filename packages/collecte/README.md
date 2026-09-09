@@ -36,12 +36,14 @@ il est **injecté** — exactement le patron `MoteurOcr` de la Condensation.
 | Moteur | Ce qu'il fait |
 |---|---|
 | `factice` | Étiquette le montant de la dernière ligne marquée « total », rien d'autre. Aucune dépendance ; le mode dev traverse le même chemin de reconstruction que le vrai moteur. |
-| `layoutlmv3` | Sidecar Python (port 3103) : LayoutLMv3 en token classification, checkpoint `nielsr/layoutlmv3-finetuned-cord`, zero-shot. Texte + géométrie + pixels. |
+| `lilt` | Sidecar Python (port 3103) : LiLT (Language-Independent Layout Transformer) sur XLM-RoBERTa en token classification, checkpoint `doc2txt/tst_lilt_cord_xlm_ft`, zero-shot. Texte + géométrie, sans les pixels. |
 
-Le sidecar est volontairement bête : il reçoit `{ image, mots: [{texte, boite 0–1000}] }` et
-rend une étiquette et un score par mot. Tout le reste — découpage, normalisation des boîtes,
-reconstruction, confiances — vit côté node. Changer de checkpoint (le fine-tuning maison
-viendra) ne touche que `MODELE_COLLECTE` et la table `ETIQUETTE`.
+Le sidecar est volontairement bête : il reçoit `{ mots: [{texte, boite 0–1000}] }` et rend
+une étiquette et un score par mot. L'image ne transite pas : LiLT ne lit que le texte et la
+géométrie, et l'`ImageChauffee` ne sert à la Collecte qu'à normaliser les boîtes. Tout le
+reste — découpage, normalisation, reconstruction, confiances — vit côté node. Changer de
+checkpoint (le fine-tuning maison viendra) ne touche que `MODELE_COLLECTE` et la table
+`ETIQUETTE`.
 
 ## Installer le sidecar
 
@@ -49,15 +51,12 @@ viendra) ne touche que `MODELE_COLLECTE` et la table `ETIQUETTE`.
 cd packages/collecte/sidecar && uv venv --python 3.11 && uv pip install -r requirements.txt
 ```
 
-Puis `MOTEUR_COLLECTE=layoutlmv3` dans le `.env`. Le premier lancement télécharge les poids
+Puis `MOTEUR_COLLECTE=lilt` dans le `.env`. Le premier lancement télécharge les poids
 dans le cache Hugging Face ; en production, l'image Docker les embarque au build (`--preparer`)
 et tourne hors ligne (`HF_HUB_OFFLINE=1`).
 
 Torch s'installe en roue **CPU** (l'index pytorch est épinglé dans `requirements.txt`) : sans
 lui, pip tirerait ~2,5 Go de bibliothèques CUDA inutiles.
-
-La lignée **transformers 4.x est requise** : la v5 remplace le tokenizer LayoutLMv3 par un
-RoBERTa nu qui ignore les boîtes, ce qui rend la branche layout du modèle aveugle.
 
 ## Étiquettes CORD → Facture
 
@@ -70,7 +69,10 @@ RoBERTa nu qui ignore les boîtes, ce qui rend la branche layout du modèle aveu
 | `TOTAL.CREDITCARDPRICE` / `TOTAL.CASHPRICE` | dernier repli du `total`, confiance réduite |
 
 Les autres étiquettes du checkpoint (remises, services, `VOID_MENU.*`…) tombent sur `O` et sont
-ignorées pour l'instant. Marchand, date, devise et carte ne sont **pas** dans CORD : ce sont
+ignorées pour l'instant. Le checkpoint en service les écrit en minuscules et **sans préfixe
+B-/I-** : la table les compare sans tenir compte de la casse, et deux entités voisines de même
+étiquette ne se séparent que par un changement d'étiquette ou une ligne de reconstruction. Un
+checkpoint maison en BIO retrouvera la séparation fine sans rien changer d'autre. Marchand, date, devise et carte ne sont **pas** dans CORD : ce sont
 les reconnaisseurs qui les remplissent, jusqu'au fine-tuning qui les apprendra au modèle.
 
 Le zero-shot étant bruyant, la reconstruction ne croit pas le modèle aveuglément :
@@ -133,7 +135,12 @@ déjà annoter.
 
 ## Licence du modèle
 
-⚠️ La base `microsoft/layoutlmv3-base` est publiée sous **CC BY-NC-SA 4.0 (non commerciale)**,
-et le checkpoint CORD en hérite. Accepté pour le prototypage ; **à arbitrer avant toute mise en
-production commerciale**. L'architecture rend un remplacement (LiLT sous MIT, ou un modèle
-maison) quasi gratuit : seuls le sidecar et la table d'étiquettes bougeraient.
+LiLT est publié sous **MIT** (`SCUT-DLVCLab`), sa base XLM-RoBERTa aussi, et le jeu CORD sous
+**CC BY 4.0** : la chaîne est utilisable commercialement. LayoutLMv3, qui tenait ce rôle avant,
+est sous CC BY-NC-SA 4.0 et a été retiré pour cette raison.
+
+Le checkpoint par défaut, `doc2txt/tst_lilt_cord_xlm_ft`, est un fine-tuning communautaire
+(MIT, F1 0,957 sur CORD selon sa fiche), sans documentation et nommé « test ». Il suffit au
+zero-shot ; **le fine-tuning maison sur `SCUT-DLVCLab/lilt-infoxlm-base` ou
+`nielsr/lilt-xlm-roberta-base`, CORD puis corpus annoté, est la prochaine étape** — et le
+banc exporte déjà le format qu'il faut.

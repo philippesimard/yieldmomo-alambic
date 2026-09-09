@@ -19,9 +19,11 @@ type MoteurOcr = {
 }
 ```
 
-Un moteur ne fait qu'une chose : rendre les fragments qu'il voit. L'ordre de lecture, la
-composition du texte et la confiance globale sont calculés par `condenser`, identiquement pour
-tous les moteurs. Deux conséquences voulues : le contrat reste assez petit pour qu'un moteur
+Un moteur ne fait qu'une chose : rendre les fragments qu'il voit — **y compris ceux qu'il n'a
+pas su lire**, qui sortent avec un texte vide. C'est la seule façon de distinguer un moteur qui
+ne voit plus rien d'un moteur qui ne lit plus rien ; `condenser` les compte et les retire, ils
+n'atteignent jamais le condensat. L'ordre de lecture, la composition du texte et la confiance
+globale sont calculés par `condenser`, identiquement pour tous les moteurs. Deux conséquences voulues : le contrat reste assez petit pour qu'un moteur
 local comme un service distant s'y plie sans effort, et deux moteurs deviennent **comparables**
 parce qu'ils sont traités à l'identique.
 
@@ -70,8 +72,35 @@ Le `Condensat` porte `blocs` et pas seulement `texte`. Sur un reçu, le libellé
 son montant sont sur la même ligne mais dans deux colonnes : sans la géométrie, la Collecte ne
 peut plus les rapprocher, et un reçu à deux articles devient illisible.
 
+## Ce que l'étape dit de sa propre lecture
+
+`Condensat.lecture` porte trois nombres, et un seul d'entre eux tranche.
+
+| champ | ce qu'il compte |
+|---|---|
+| `plancher` | La confiance sous laquelle se trouve un dixième des fragments. **Sous 0,75, la sous-étape se déclare dégradée.** |
+| `muets` | Boîtes détectées dont la reconnaissance n'a rien tiré. Mesuré, pas jugé. |
+| `bordure` | Fragments dont le cadre touche un bord latéral — la marque d'un document rogné. Mesuré, pas jugé. |
+
+**Le plancher plutôt que la moyenne.** Pondérée par la longueur du texte, la moyenne donne 0,89
+à 0,99 à *tout* le corpus — y compris au reçu dont le total a été lu `419,10` au lieu de `49,10`
+(0,92). Elle résume ce qui a été lu ; elle ne dit rien de ce qui a dérapé. Le plancher, lui,
+sépare : **0,39 / 0,47 / 0,65** pour les trois reçus dont l'OCR s'est trompé, **0,87 et plus**
+pour les vingt-trois autres. Le seuil se pose dans l'écart.
+
+`muets` et `bordure` sortent sans verdict, faute d'un pouvoir séparateur mesuré : deux reçus
+sans défaut portent proportionnellement plus de muets que le reçu fautif, et un reçu cadré au
+plus juste touche le bord aussi bien qu'un reçu amputé. Les régler au jugé serait exactement ce
+que [`outils/mesure.ts`](../../outils/mesure.ts) met en garde — bouger un seuil en croyant
+l'avoir amélioré. Ils sont là pour être calibrés sur plus de photos.
+
+Les trois partent dans `Mesures`, donc dans les logs de chaque distillation : le hublot ne
+tourne qu'en développement, et une lecture douteuse qui ne se verrait que là ne se verrait
+jamais en production.
+
 ## Erreurs
 
-Aucun fragment lu lève `ErreurAlambic(aucun_texte, 422)`. C'est un échec franc et non une
+Aucun fragment **lisible** lève `ErreurAlambic(aucun_texte, 422)` — des boîtes détectées mais
+muettes ne sauvent pas la lecture, puisque rien n'en sort. C'est un échec franc et non une
 facture vide : le consommateur doit pouvoir distinguer « rien de lisible, refais la photo » de
 « lu, mais aucun total reconnu ».

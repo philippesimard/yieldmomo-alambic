@@ -110,8 +110,8 @@ qu'on sache dire restaurant ou café) ; quand elle en désigne de groupes diffé
 rien. Les enseignes hors catalogue — la majorité — tombent aussi sur `null`.
 
 > **État actuel :** la Condensation lit avec **PaddleOCR** (PP-OCRv5) et la Collecte structure
-> avec **LayoutLMv3** (token classification, checkpoint CORD zero-shot) — chacun dans son
-> sidecar Python, activés par `MOTEUR_OCR=paddleocr` et `MOTEUR_COLLECTE=layoutlmv3` (voir
+> avec **LiLT** (token classification, checkpoint CORD zero-shot, licence MIT) — chacun dans
+> son sidecar Python, activés par `MOTEUR_OCR=paddleocr` et `MOTEUR_COLLECTE=lilt` (voir
 > [`packages/condensation`](packages/condensation) et [`packages/collecte`](packages/collecte)
 > pour installer les venvs ; sans eux, les moteurs **factices** restent le défaut en
 > développement). Le fine-tuning sur un corpus annoté maison est la prochaine étape ; le banc de

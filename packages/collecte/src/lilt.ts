@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { interpreterEtiquette, type MotEtiquete } from './etiquettes'
 import type { MoteurEtiquetage } from './moteur'
 import { boiteNormalisee, type Mot } from './mots'
-import { SIDECAR_LAYOUTLM } from './sidecar'
+import { SIDECAR_LILT } from './sidecar'
 
 // La reponse du sidecar traverse une frontiere http : on la valide comme telle au lieu de lui
 // faire confiance sur sa forme.
@@ -13,18 +13,18 @@ const ReponseEtiquetageSchema = z.object({
 
 type EtiquetteBrute = z.infer<typeof ReponseEtiquetageSchema>['etiquettes'][number]
 
-const NOM_MOTEUR_LAYOUTLM = 'layoutlmv3'
+const NOM_MOTEUR_LILT = 'lilt'
 
-export type OptionsMoteurLayoutlm = {
+export type OptionsMoteurLilt = {
   url: string
   delaiMs: number
 }
 
 // Fabrique et non singleton : l'url et le delai viennent de la configuration, que seule l'api
 // a le droit de lire. Construire le moteur n'ouvre aucune connexion.
-export function creerMoteurLayoutlm(options: OptionsMoteurLayoutlm): MoteurEtiquetage {
+export function creerMoteurLilt(options: OptionsMoteurLilt): MoteurEtiquetage {
   return {
-    nom: NOM_MOTEUR_LAYOUTLM,
+    nom: NOM_MOTEUR_LILT,
     etiqueter: (mots, image) => etiqueter(mots, image, options),
   }
 }
@@ -32,12 +32,12 @@ export function creerMoteurLayoutlm(options: OptionsMoteurLayoutlm): MoteurEtiqu
 async function etiqueter(
   mots: readonly Mot[],
   image: ImageChauffee,
-  options: OptionsMoteurLayoutlm,
+  options: OptionsMoteurLilt,
 ): Promise<MotEtiquete[]> {
   if (mots.length === 0) return []
 
+  // LiLT ne lit que le texte et la geometrie : l'image ne sert qu'a normaliser les boites.
   const corps = JSON.stringify({
-    image: image.contenu.toString('base64'),
     mots: mots.map((mot) => ({
       texte: mot.texte,
       boite: boiteNormalisee(mot.cadre, image.largeur, image.hauteur),
@@ -46,7 +46,7 @@ async function etiqueter(
 
   let reponse: Response
   try {
-    reponse = await fetch(`${options.url}${SIDECAR_LAYOUTLM.routeEtiquetage}`, {
+    reponse = await fetch(`${options.url}${SIDECAR_LILT.routeEtiquetage}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: corps,

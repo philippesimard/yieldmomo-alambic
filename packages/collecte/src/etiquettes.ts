@@ -44,11 +44,15 @@ export function epurer(mots: readonly MotEtiquete[]): MotEtiquete[] {
 }
 
 // 'B-MENU.NM' devient { etiquette: 'MENU.NM', debut: true }. Toute etiquette hors table tombe
-// sur `exterieur` : le checkpoint en connait une soixantaine, la reconstruction n'en lit
+// sur `exterieur` : le checkpoint en connait une trentaine, la reconstruction n'en lit
 // qu'une poignee.
+//
+// La casse est celle du checkpoint, pas de CORD : celui en service ecrit `menu.nm`, sans
+// prefixe B-/I-. Sans prefixe, aucun mot n'ouvre d'entite ; c'est la reconstruction qui
+// separe deux entites voisines par le changement d'etiquette.
 export function interpreterEtiquette(brute: string): { etiquette: Etiquette; debut: boolean } {
   const debut = brute.startsWith('B-')
-  const nue = debut || brute.startsWith('I-') ? brute.slice(2) : brute
+  const nue = (debut || brute.startsWith('I-') ? brute.slice(2) : brute).toUpperCase()
   if (!ETIQUETTES_CONNUES.has(nue)) return { etiquette: ETIQUETTE.exterieur, debut: false }
   // Sur : l'appartenance a l'ensemble des valeurs de ETIQUETTE vient d'etre verifiee.
   return { etiquette: nue as Etiquette, debut }

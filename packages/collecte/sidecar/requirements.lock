@@ -42,8 +42,6 @@ packaging==24.1
     # via
     #   huggingface-hub
     #   transformers
-pillow==12.3.0
-    # via -r requirements.txt
 pyyaml==6.0.3
     # via
     #   huggingface-hub

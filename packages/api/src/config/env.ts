@@ -31,7 +31,7 @@ export type DetectionOcr = (typeof DETECTION_OCR)[keyof typeof DETECTION_OCR]
 
 export const MOTEUR_COLLECTE = {
   factice: 'factice',
-  layoutlmv3: 'layoutlmv3',
+  lilt: 'lilt',
 } as const
 
 export type MoteurCollecteConfigure = (typeof MOTEUR_COLLECTE)[keyof typeof MOTEUR_COLLECTE]
@@ -48,9 +48,9 @@ const CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT = fileURLToPath(
   new URL('../../../collecte/sidecar/.venv/bin/python', import.meta.url),
 )
 
-// Checkpoint LayoutLMv3 fine-tune sur CORD (recus). Configurable pour accueillir le futur
-// modele fine-tune maison sans toucher au code.
-const MODELE_COLLECTE_PAR_DEFAUT = 'nielsr/layoutlmv3-finetuned-cord'
+// Checkpoint LiLT (licence MIT) fine-tune sur CORD (recus). Configurable pour accueillir le
+// futur modele fine-tune maison sans toucher au code.
+const MODELE_COLLECTE_PAR_DEFAUT = 'doc2txt/tst_lilt_cord_xlm_ft'
 
 // Un ouvrier de moins que de coeurs : le thread principal doit garder de quoi accepter les
 // requetes et rendre les reponses, sinon la latence grimpe alors meme que le debit plafonne.
@@ -143,7 +143,7 @@ const EnvSchema = z
         code: 'custom',
         path: ['MOTEUR_COLLECTE'],
         message:
-          'MOTEUR_COLLECTE est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `layoutlmv3`.',
+          'MOTEUR_COLLECTE est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `lilt`.',
       })
     }
   })

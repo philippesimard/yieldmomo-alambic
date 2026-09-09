@@ -18,6 +18,22 @@ export type BlocTexte = {
   confiance: number
 }
 
+// Ce que la Condensation sait de sa propre lecture. `confiance` resume ce qui a ete lu ; ces
+// trois nombres decrivent ce qui a pu ne PAS l'etre, et c'est la seule question qui compte
+// quand un montant part chez le consommateur.
+export type QualiteLecture = {
+  // Confiance sous laquelle se trouve un dixieme des blocs. Le seul des trois sur lequel
+  // l'etape tranche, parce que le seul dont le pouvoir separateur est mesure.
+  plancher: number
+  // Boites que le moteur a detectees sans en tirer un caractere. Journalise et non juge : au
+  // corpus, deux recus sans defaut en portent proportionnellement plus que le recu fautif.
+  muets: number
+  // Blocs dont le cadre touche un bord lateral. Un document rogne perd du texte sans qu'aucune
+  // confiance ne baisse, mais un recu cadre au plus juste touche le bord lui aussi : un cas de
+  // chaque sorte au corpus, trop peu pour trancher. Journalise en attendant d'en avoir plus.
+  bordure: number
+}
+
 // Les blocs, et pas seulement le texte a plat : sur un recu, le libelle d'un article et son
 // montant sont sur la meme ligne mais dans deux colonnes. Sans la geometrie, la Collecte ne
 // peut plus les rapprocher, et une facture a deux articles devient illisible.
@@ -25,4 +41,5 @@ export type Condensat = {
   texte: string
   blocs: BlocTexte[]
   confiance: number
+  lecture: QualiteLecture
 }

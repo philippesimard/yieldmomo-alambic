@@ -7,6 +7,7 @@
 //   npm run banc:condensation -- corpus --moteur factice
 //   npm run banc:condensation -- corpus --detection server
 //   npm run banc:condensation -- corpus --brute        (sans binarisation : resize + gris)
+//   npm run banc:condensation -- corpus --sans-relecture  (sans la seconde lecture des blocs faibles)
 //
 // Le banc demarre son propre sidecar sur un port a lui (3102) pour ne pas gener un
 // `npm run dev` en cours, et l'arrete a la fin.
@@ -59,6 +60,9 @@ type Passage = {
   blocs: number
   lignes: number
   confiance: number | undefined
+  plancher: number | undefined
+  muets: number | undefined
+  bordure: number | undefined
   minimum: number | undefined
   chauffeMs: number
   durees: Map<string, number>
@@ -72,6 +76,7 @@ const { values, positionals } = parseArgs({
     moteur: { type: 'string', default: NOM_MOTEUR.paddleocr },
     detection: { type: 'string', default: DETECTION.mobile },
     brute: { type: 'boolean', default: false },
+    'sans-relecture': { type: 'boolean', default: false },
   },
   allowPositionals: true,
 })
@@ -105,7 +110,7 @@ const moteur: MoteurOcr =
     : creerMoteurPaddle({ url: `http://127.0.0.1:${PORT_BANC}`, delaiMs: DELAI_LECTURE_MS })
 
 if (values.moteur === NOM_MOTEUR.paddleocr) {
-  sidecar = await demarrerSidecar(values.detection)
+  sidecar = await demarrerSidecar(values.detection, values['sans-relecture'])
 }
 
 try {
@@ -118,7 +123,7 @@ try {
   sidecar?.kill('SIGTERM')
 }
 
-async function demarrerSidecar(detection: string): Promise<ChildProcess> {
+async function demarrerSidecar(detection: string, sansRelecture: boolean): Promise<ChildProcess> {
   const python = fileURLToPath(
     new URL('../packages/condensation/sidecar/.venv/bin/python', import.meta.url),
   )
@@ -126,11 +131,11 @@ async function demarrerSidecar(detection: string): Promise<ChildProcess> {
     `Demarrage du sidecar (${detection}) sur le port ${PORT_BANC} — le premier lancement telecharge les modeles...\n`,
   )
   // stderr herite : les messages du sidecar (telechargements, pret) s'affichent tels quels.
-  const enfant = spawn(
-    python,
-    [SIDECAR_PADDLE.chemin, '--port', String(PORT_BANC), '--detection', detection],
-    { stdio: ['ignore', 'ignore', 'inherit'] },
-  )
+  const arguments_ = [SIDECAR_PADDLE.chemin, '--port', String(PORT_BANC), '--detection', detection]
+  if (sansRelecture) {
+    arguments_.push('--sans-relecture')
+  }
+  const enfant = spawn(python, arguments_, { stdio: ['ignore', 'ignore', 'inherit'] })
 
   let mort = false
   enfant.on('error', () => {
@@ -216,6 +221,9 @@ async function passer(photo: string): Promise<Passage> {
       blocs: condensat.blocs.length,
       lignes: condensat.texte.split('\n').length,
       confiance: condensat.confiance,
+      plancher: condensat.lecture.plancher,
+      muets: condensat.lecture.muets,
+      bordure: condensat.lecture.bordure,
       minimum: minimumDe(condensat),
       chauffeMs,
       durees,
@@ -232,6 +240,9 @@ async function passer(photo: string): Promise<Passage> {
       blocs: 0,
       lignes: 0,
       confiance: undefined,
+      plancher: undefined,
+      muets: undefined,
+      bordure: undefined,
       minimum: undefined,
       chauffeMs: 0,
       durees,
@@ -267,6 +278,9 @@ function afficher(passages: readonly Passage[]) {
     'blocs'.padStart(5),
     'lign'.padStart(4),
     'conf',
+    'planc'.padStart(5),
+    'muet'.padStart(4),
+    'bord'.padStart(4),
     ' min',
     'chauf'.padStart(6),
     ...colonnes.map((nom) => abreger(nom).padStart(6)),
@@ -281,6 +295,9 @@ function afficher(passages: readonly Passage[]) {
       String(passage.blocs).padStart(5),
       String(passage.lignes).padStart(4),
       (passage.confiance === undefined ? '   —' : passage.confiance.toFixed(2)).padStart(4),
+      (passage.plancher === undefined ? '—' : passage.plancher.toFixed(2)).padStart(5),
+      (passage.muets === undefined ? '—' : String(passage.muets)).padStart(4),
+      (passage.bordure === undefined ? '—' : String(passage.bordure)).padStart(4),
       (passage.minimum === undefined ? '   —' : passage.minimum.toFixed(2)).padStart(4),
       passage.chauffeMs.toFixed(0).padStart(6),
       ...colonnes.map((nom) => {

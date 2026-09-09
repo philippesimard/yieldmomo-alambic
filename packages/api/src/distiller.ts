@@ -1,7 +1,7 @@
 import { chauffer, SOUS_ETAPES_CHAUFFE } from '@alambic/chauffe'
 import {
   collecter,
-  creerMoteurLayoutlm,
+  creerMoteurLilt,
   moteurFacticeEtiquetage,
   SOUS_ETAPES_COLLECTE,
 } from '@alambic/collecte'
@@ -29,7 +29,7 @@ const MOTEUR_LECTURE = MOTEURS_OCR[env.MOTEUR_OCR]
 
 const MOTEURS_ETIQUETAGE = {
   [MOTEUR_COLLECTE.factice]: moteurFacticeEtiquetage,
-  [MOTEUR_COLLECTE.layoutlmv3]: creerMoteurLayoutlm({
+  [MOTEUR_COLLECTE.lilt]: creerMoteurLilt({
     url: `http://127.0.0.1:${env.PORT_SIDECAR_COLLECTE}`,
     delaiMs: env.DELAI_COLLECTE_MS,
   }),
@@ -94,6 +94,9 @@ export async function distiller(original: Buffer, tracage?: Tracage): Promise<Di
     mesures: {
       octets: original.byteLength,
       qualite: image.qualite,
+      plancher: condensat.lecture.plancher,
+      muets: condensat.lecture.muets,
+      bordure: condensat.lecture.bordure,
       chauffeMs: arrondir(debutCondensation - debutChauffe),
       condensationMs: arrondir(debutCollecte - debutCondensation),
       collecteMs: arrondir(fin - debutCollecte),

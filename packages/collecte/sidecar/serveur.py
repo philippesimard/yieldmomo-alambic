@@ -1,15 +1,15 @@
-# Sidecar d'etiquetage de l'etape Collecte : recoit l'image et les mots sur POST /etiqueter,
-# rend l'etiquette et le score que LayoutLMv3 pose sur chaque mot, dans le meme ordre.
-# Processus enfant lance et surveille par l'api ; il n'ecoute que sur 127.0.0.1 et n'ecrit rien
-# sur disque a l'execution (les poids viennent du cache, prepare au build de l'image par
-# --preparer).
+# Sidecar d'etiquetage de l'etape Collecte : recoit les mots et leurs boites sur
+# POST /etiqueter, rend l'etiquette et le score que LiLT pose sur chaque mot, dans le meme
+# ordre. Processus enfant lance et surveille par l'api ; il n'ecoute que sur 127.0.0.1 et
+# n'ecrit rien sur disque a l'execution (les poids viennent du cache, prepare au build de
+# l'image par --preparer).
 #
-# Volontairement bete : processor, inference, softmax, rien d'autre. Le decoupage en mots, la
+# Volontairement bete : tokenizer, inference, softmax, rien d'autre. Le decoupage en mots, la
 # normalisation des boites et la reconstruction en facture vivent cote node — changer de
 # checkpoint ne doit toucher que ce fichier et la table d'etiquettes de la Collecte.
+#
+# LiLT ne lit que le texte et la geometrie, jamais les pixels : l'image ne transite pas.
 import argparse
-import base64
-import io
 import json
 import logging
 import sys
@@ -19,11 +19,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 ROUTE_ETIQUETAGE = '/etiqueter'
 ROUTE_SANTE = '/sante'
 
-# L'image chauffee est bornee (2000x6000 en png) et les mots pesent peu : un corps plus lourd
-# que 40 Mo ne peut pas venir d'Alambic, on le refuse avant de le lire.
-TAILLE_MAX_CORPS = 40 * 1024 * 1024
+# Quelques centaines de mots et leurs boites pesent quelques dizaines de ko : un corps plus
+# lourd que 4 Mo ne peut pas venir d'Alambic, on le refuse avant de le lire.
+TAILLE_MAX_CORPS = 4 * 1024 * 1024
 
-MODELE_PAR_DEFAUT = 'nielsr/layoutlmv3-finetuned-cord'
+MODELE_PAR_DEFAUT = 'doc2txt/tst_lilt_cord_xlm_ft'
 
 # Les fenetres du modele font 512 tokens ; le chevauchement laisse du contexte des deux cotes
 # aux mots d'un recu qui deborde d'une fenetre.
@@ -31,54 +31,55 @@ CHEVAUCHEMENT_TOKENS = 128
 
 ETIQUETTE_EXTERIEURE = 'O'
 
-processor = None
+# Boite des tokens speciaux et de bourrage, hors de tout mot.
+BOITE_VIDE = [0, 0, 0, 0]
+
+tokenizer = None
 modele = None
 verrou = threading.Lock()
 
 
 def charger(nom_modele):
-    from transformers import AutoProcessor, LayoutLMv3ForTokenClassification
+    from transformers import AutoTokenizer, LiltForTokenClassification
 
-    # apply_ocr force a faux : les mots et leurs boites viennent de la Condensation, le
-    # processor ne doit pas refaire l'ocr lui-meme. Force ici plutot que confie a la
-    # configuration du checkpoint, qui pourrait dire l'inverse.
-    proc = AutoProcessor.from_pretrained(nom_modele, apply_ocr=False)
-    mdl = LayoutLMv3ForTokenClassification.from_pretrained(nom_modele)
+    tok = AutoTokenizer.from_pretrained(nom_modele)
+    mdl = LiltForTokenClassification.from_pretrained(nom_modele)
     mdl.eval()
-    return proc, mdl
+    return tok, mdl
 
 
-def etiqueter(image, textes, boites):
+def etiqueter(textes, boites):
     import torch
 
-    encodage = processor(
-        image,
+    encodage = tokenizer(
         textes,
-        boxes=boites,
+        is_split_into_words=True,
         truncation=True,
         stride=CHEVAUCHEMENT_TOKENS,
         return_overflowing_tokens=True,
         padding=True,
         return_tensors='pt',
     )
-    # Le tokenizer decoupe en fenetres mais le processor ne rend qu'une image (en liste, pas
-    # en tenseur empile) : on empile puis on repete l'image pour chaque fenetre, sinon le lot
-    # du modele est incoherent.
-    correspondance = encodage.pop('overflow_to_sample_mapping', None)
-    pixels = encodage['pixel_values']
-    if not torch.is_tensor(pixels):
-        pixels = torch.stack(list(pixels))
-    if correspondance is not None:
-        pixels = pixels[correspondance]
-    encodage['pixel_values'] = pixels
+    encodage.pop('overflow_to_sample_mapping', None)
+
+    # Le tokenizer ne connait pas les boites : chaque sous-token recoit celle de son mot.
+    ids_par_fenetre = [
+        encodage.word_ids(batch_index=fenetre) for fenetre in range(encodage['input_ids'].shape[0])
+    ]
+    encodage['bbox'] = torch.tensor(
+        [
+            [BOITE_VIDE if id_mot is None else boites[id_mot] for id_mot in ids_mots]
+            for ids_mots in ids_par_fenetre
+        ],
+        dtype=torch.long,
+    )
 
     with torch.inference_mode():
         sortie = modele(**encodage)
     scores = torch.softmax(sortie.logits, dim=-1)
 
     etiquettes = [None] * len(textes)
-    for fenetre in range(scores.shape[0]):
-        ids_mots = encodage.word_ids(batch_index=fenetre)
+    for fenetre, ids_mots in enumerate(ids_par_fenetre):
         for position, id_mot in enumerate(ids_mots):
             # Premier token du mot, premiere fenetre ou il apparait : simple et suffisant, le
             # chevauchement garantit que chaque mot est vu au moins une fois.
@@ -97,13 +98,12 @@ def etiqueter(image, textes, boites):
 
 def lire_requete(corps):
     donnees = json.loads(corps)
-    image_png = base64.b64decode(donnees['image'], validate=True)
     textes = []
     boites = []
     for mot in donnees['mots']:
         textes.append(str(mot['texte']))
         boites.append([int(valeur) for valeur in mot['boite']])
-    return image_png, textes, boites
+    return textes, boites
 
 
 class Requetes(BaseHTTPRequestHandler):
@@ -126,11 +126,8 @@ class Requetes(BaseHTTPRequestHandler):
             return
         corps = self.rfile.read(longueur)
 
-        from PIL import Image
-
         try:
-            image_png, textes, boites = lire_requete(corps)
-            image = Image.open(io.BytesIO(image_png)).convert('RGB')
+            textes, boites = lire_requete(corps)
         except Exception:
             self._repondre(400, {'erreur': 'requete illisible'})
             return
@@ -143,7 +140,7 @@ class Requetes(BaseHTTPRequestHandler):
             # Une seule instance du modele, serialisee : torch parallelise deja chaque
             # inference sur les coeurs, une deuxieme instance doublerait la memoire sans debit.
             with verrou:
-                etiquettes = etiqueter(image, textes, boites)
+                etiquettes = etiqueter(textes, boites)
         except Exception as erreur:
             print(f'echec d etiquetage : {erreur}', file=sys.stderr, flush=True)
             self._repondre(500, {'erreur': 'echec d etiquetage'})
@@ -175,19 +172,17 @@ def principal():
     # stderr.
     logging.disable(logging.INFO)
 
-    global processor, modele
-    processor, modele = charger(arguments.modele)
+    global tokenizer, modele
+    tokenizer, modele = charger(arguments.modele)
 
     if arguments.preparer:
-        # Etape de build docker : charger processor et modele suffit a remplir le cache HF.
+        # Etape de build docker : charger tokenizer et modele suffit a remplir le cache HF.
         print('modeles prepares', file=sys.stderr, flush=True)
         return
 
     # Warmup avant de prendre le port : les allocations de la premiere inference se paient ici,
     # et toute reponse http vaut ensuite « pret ».
-    from PIL import Image
-
-    etiqueter(Image.new('RGB', (224, 224), 'white'), ['pret'], [[0, 0, 10, 10]])
+    etiqueter(['pret'], [[0, 0, 10, 10]])
 
     serveur = ThreadingHTTPServer(('127.0.0.1', arguments.port), Requetes)
     print(f'pret sur le port {arguments.port}', file=sys.stderr, flush=True)

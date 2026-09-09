@@ -5,8 +5,8 @@ import type { BlocTexte, Cadre } from '@alambic/noyau'
 // d'origine, dont la confiance ocr pondere celle des entites reconstruites.
 export type Mot = BlocTexte & { indexBloc: number }
 
-// L'echelle de LayoutLM : le modele quantifie chaque boite sur une grille de 0 a 1000, quelle
-// que soit la taille de l'image.
+// L'echelle de LiLT : le modele quantifie chaque boite sur une grille de 0 a 1000, quelle que
+// soit la taille de l'image.
 const ECHELLE_BOITE = 1000
 
 export type BoiteNormalisee = [number, number, number, number]
@@ -42,7 +42,7 @@ export function decouperEnMots(blocs: readonly BlocTexte[]): Mot[] {
   return mots
 }
 
-// Le processor exige des boites croissantes dans [0, 1000] : un cadre au bord de l'image ou
+// Le modele exige des boites croissantes dans [0, 1000] : un cadre au bord de l'image ou
 // degenere est ramene dans la grille puis etire d'un cran.
 export function boiteNormalisee(cadre: Cadre, largeur: number, hauteur: number): BoiteNormalisee {
   const x0 = Math.min(borner((cadre.x * ECHELLE_BOITE) / largeur), ECHELLE_BOITE - 1)
