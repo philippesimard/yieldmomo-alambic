@@ -1,7 +1,9 @@
 import { CODE_ERREUR, FactureSchema, ReponseErreurSchema } from '@alambic/noyau'
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { distillerDansAtelier } from '../atelier/atelier'
 import { exigerCle } from '../cle'
+import { env } from '../config/env'
 
 // Toutes les issues de la route, declarees une fois. Fastify serialise selon le statut, et un
 // statut absent de cette table sortirait en json non contraint.
@@ -20,11 +22,23 @@ const REPONSES_ERREUR = {
 // requete ordinaire ne coute qu'un aller-retour.
 const LIMITE_DEBIT = { max: 30, timeWindow: '1 minute' }
 
+// Avant l'authentification : verifier un secret pour un service ferme est du travail pour rien,
+// et l'etat de maintenance est de toute facon public sur les sondes. Les sondes, elles,
+// continuent de repondre — c'est par elles qu'on voit que la maintenance est bien en place.
+async function refuserEnMaintenance(_requete: FastifyRequest, reponse: FastifyReply) {
+  if (!env.MODE_MAINTENANCE) return
+
+  return reponse.code(503).send({
+    code: CODE_ERREUR.maintenance,
+    message: 'Le service est en maintenance, reessayez plus tard.',
+  })
+}
+
 export const routeDistiller: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/distiller',
     {
-      preHandler: exigerCle,
+      preHandler: [refuserEnMaintenance, exigerCle],
       config: { rateLimit: LIMITE_DEBIT },
       // Aucun schema d'entree : le corps est un multipart binaire, que zod ne doit pas voir.
       schema: { response: { 200: FactureSchema, ...REPONSES_ERREUR } },

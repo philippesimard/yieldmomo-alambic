@@ -8,12 +8,54 @@ connaît les trois étapes ; aucune d'elles ne sait ce qui la précède ni ce qu
 | Route | Rôle |
 |---|---|
 | `POST /distiller` | Une image en `multipart/form-data` → une `Facture` en JSON |
-| `GET /health` | Liveness : le process répond |
-| `GET /ready` | Readiness : l'atelier a au moins un ouvrier vivant et les moteurs sont prêts |
+| `GET /health` | Liveness : « faut-il redémarrer ce conteneur ? » |
+| `GET /ready` | Readiness : « faut-il lui envoyer du trafic ? » |
 
 `POST /distiller` exige l'en-tête `x-cle-alambic`, comparée en temps constant sur des empreintes
 SHA-256 — comparer directement les secrets trahirait leur longueur, et un `===` s'arrête au
 premier octet différent, ce qui laisse deviner la clé octet par octet.
+
+## Les deux sondes
+
+Elles regardent le **même** état — un ouvrier vivant au moins, et les deux moteurs prêts — et ne
+diffèrent que par la question posée. Tout le mode maintenance tient dans cet écart.
+
+| | `MODE_MAINTENANCE=true` | Tout va bien | Atelier vide ou moteur absent |
+|---|---|---|---|
+| `GET /health` | **200** `"maintenance"` | 200 `"ok"` / `"degrade"` | **503** `"degrade"` |
+| `GET /ready` | **503** `"maintenance"` | 200 `"ok"` / `"degrade"` | **503** `"degrade"` |
+| `POST /distiller` | **503** `maintenance` | normal | 429 / 503 |
+
+Les deux sondes rendent **toujours** un `Sante` complet, y compris en 503 — et non le
+`{ code, message }` des erreurs de distillation. Un 503 de sonde est un *état*, pas un échec de
+requête : le code HTTP porte l'action ops, le corps porte le diagnostic, et l'appelant lit la
+même forme quoi qu'il arrive.
+
+Une sonde ne déclenche **aucun** appel sortant : elle ne lit que des compteurs et des drapeaux en
+mémoire. Sonder ne peut donc ni coûter ni échouer. Elles répondent en `cache-control: no-store` —
+un état de santé n'a jamais de sens dans un cache.
+
+### Le mode maintenance
+
+`MODE_MAINTENANCE=true` est un arrêt **volontaire**, pas une panne, et les deux se traitent
+différemment :
+
+- `/ready` passe en 503 pour que le load balancer **retire** l'instance ;
+- `/health` reste en 200 pour que personne ne la **redémarre**.
+
+C'est pour cette raison que le `HEALTHCHECK` du Dockerfile vise `/health` et non `/ready` : viser
+la readiness ferait redémarrer le conteneur en boucle pendant toute la maintenance, alors que le
+process va très bien.
+
+`POST /distiller` refuse en 503 `maintenance`, **avant** de vérifier `x-cle-alambic` : contrôler
+un secret pour un service fermé est du travail pour rien, et l'état de maintenance est de toute
+façon public sur les sondes.
+
+### Le statut
+
+`ok` quand le service est au complet, `maintenance` quand il est fermé, `degrade` dès qu'il ne
+l'est plus tout à fait — un moteur qui n'a pas fini de charger, ou un ouvrier mort que l'atelier
+n'a pas encore remplacé. Le code HTTP dit s'il faut agir, ce champ dit pourquoi.
 
 ## L'atelier
 
@@ -31,9 +73,9 @@ mégaoctets à chaque requête.
 
 Un ouvrier qui dépasse `DELAI_DISTILLATION_MS` est tué et remplacé. Mais un ouvrier qui meurt
 sans avoir rien servi ne démarrera probablement jamais : au-delà de 10 morts par minute, l'atelier
-**cesse de remplacer** et se vide. `/ready` passe alors en 503 et l'orchestrateur redémarre le
-conteneur — mieux vaut un service qui s'annonce mort qu'une boucle de création qui brûle un cœur
-en cachant la panne.
+**cesse de remplacer** et se vide. Les deux sondes passent alors en 503 et l'orchestrateur
+redémarre le conteneur — mieux vaut un service qui s'annonce mort qu'une boucle de création qui
+brûle un cœur en cachant la panne.
 
 ## Les sidecars
 

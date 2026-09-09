@@ -63,12 +63,14 @@ COPY packages ./packages
 ENV NODE_ENV=production
 EXPOSE 3100
 
-# /ready et non /health : un Alambic sans ouvrier vivant ou sans moteur pret ne peut rien
-# distiller, meme si son process repond encore. C'est la panne qu'un redemarrage repare.
-# start-period de 120s : chaque sidecar charge son modele avant de repondre, et /ready attend
+# /health et non /ready : les deux sondes exigent un ouvrier vivant et des moteurs prets, mais
+# seule /health reste en 200 pendant une maintenance volontaire (MODE_MAINTENANCE). Viser /ready
+# ferait redemarrer le conteneur en boucle pendant toute la maintenance, alors que le process va
+# tres bien. /ready reste la sonde du load balancer, celle qui dit s'il faut envoyer du trafic.
+# start-period de 120s : chaque sidecar charge son modele avant de repondre, et /health attend
 # les deux.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3100/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:3100/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 # tsx consomme la source TypeScript directement, sans pipeline de build a maintenir : c'est
 # donc une vraie dependance de production, d'ou le `npm ci --omit=dev` plus haut.

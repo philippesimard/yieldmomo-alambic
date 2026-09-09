@@ -1,19 +1,12 @@
 import { availableParallelism } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { ENVIRONNEMENT } from '@alambic/noyau'
 import { config } from 'dotenv'
 import { z } from 'zod'
 
 // Le .env vit a la racine du mono-repo, mais npm workspaces execute les scripts avec
 // cwd = packages/api : on le charge donc par chemin absolu, pas depuis le cwd.
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true })
-
-export const ENVIRONNEMENT = {
-  development: 'development',
-  production: 'production',
-  test: 'test',
-} as const
-
-export type Environnement = (typeof ENVIRONNEMENT)[keyof typeof ENVIRONNEMENT]
 
 export const MOTEUR_OCR = {
   factice: 'factice',
@@ -72,6 +65,10 @@ const EnvSchema = z
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
+    // Arret volontaire du service. Les sondes l'annoncent et /distiller refuse, mais le process
+    // reste debout : c'est ce qui distingue une maintenance d'une panne, et ce qui evite que
+    // l'orchestrateur redemarre en boucle un conteneur qu'on a justement mis de cote.
+    MODE_MAINTENANCE: z.stringbool().default(false),
     // Le secret partage avec l'api de YieldMomo. Optionnelle en developpement, ou l'exiger
     // ferait echouer un `npm run dev` sur un clone frais ; exigee en production plus bas, ou
     // son absence laisserait le service ouvert a qui sait l'adresse.

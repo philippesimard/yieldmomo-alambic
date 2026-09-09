@@ -60,10 +60,6 @@ Le service écoute sur le port 3100 (3000 est déjà pris par l'API de YieldMomo
 ## Essayer
 
 ```bash
-curl -s localhost:3100/health
-```
-
-```bash
 curl -s -X POST localhost:3100/distiller -H "x-cle-alambic: $ALAMBIC_CLE" -F "image=@recu.jpg"
 ```
 
@@ -130,6 +126,69 @@ C'est l'outil avec lequel les étapes se conçoivent — on y juge un seuillage,
 reconnaissance sur de vraies photos. Il n'existe jamais en production : voir
 [`packages/hublot`](packages/hublot).
 
+## Santé et maintenance
+
+Deux sondes, qui regardent le même état et ne diffèrent que par la question posée :
+
+| Route | Question |
+|---|---|
+| `GET /health` | Liveness — « faut-il redémarrer ce conteneur ? » |
+| `GET /ready` | Readiness — « faut-il lui envoyer du trafic ? » |
+
+```bash
+curl -s localhost:3100/health
+```
+
+```json
+{
+  "statut": "ok",
+  "version": "0.1.0",
+  "horodatage": "2026-09-09T15:39:37.568Z",
+  "environnement": "production",
+  "demarreLe": "2026-09-09T14:02:11.004Z",
+  "ouvriers": 7,
+  "ouvriersAttendus": 7,
+  "condensation": { "pret": true },
+  "collecte": { "pret": true }
+}
+```
+
+`condensation` et `collecte` sont les **étapes**, pas les moteurs qui travaillent derrière. Que
+la Condensation lise avec PaddleOCR ou autre chose ne regarde pas l'appelant : le publier
+obligerait à renégocier ce contrat le jour où on en change.
+
+`statut` vaut `ok` quand le service est au complet, `maintenance` quand il est fermé, et
+`degrade` dès qu'il ne l'est plus tout à fait — un moteur qui n'a pas fini de charger, ou un
+ouvrier mort que l'atelier n'a pas encore remplacé. **Le code HTTP dit s'il faut agir, `statut`
+dit pourquoi.**
+
+Les deux sondes rendent **toujours** cette même forme, y compris en 503 — et non le
+`{ code, message }` des erreurs de distillation. Un 503 de sonde est un *état*, pas un échec de
+requête. Elles répondent en `cache-control: no-store`, et ne déclenchent aucun appel sortant :
+sonder ne peut ni coûter ni échouer.
+
+### `MODE_MAINTENANCE`
+
+Un arrêt **volontaire**, pas une panne — et les deux ne se traitent pas pareil :
+
+| | `MODE_MAINTENANCE=true` | Tout va bien | Atelier vide ou moteur absent |
+|---|---|---|---|
+| `GET /health` | **200** `"maintenance"` | 200 `"ok"` / `"degrade"` | **503** `"degrade"` |
+| `GET /ready` | **503** `"maintenance"` | 200 `"ok"` / `"degrade"` | **503** `"degrade"` |
+| `POST /distiller` | **503** `maintenance` | normal | 429 / 503 |
+
+`/ready` passe en 503 pour que le load balancer **retire** l'instance ; `/health` reste en 200
+pour que personne ne la **redémarre**. C'est pour cette raison que le `HEALTHCHECK` du Dockerfile
+vise `/health` : viser la readiness ferait redémarrer le conteneur en boucle pendant toute la
+maintenance, alors que le process va très bien.
+
+Côté consommateur, un `POST /distiller` pendant une maintenance rend un 503 ordinaire, de la même
+forme que les autres :
+
+```json
+{ "code": "maintenance", "message": "Le service est en maintenance, reessayez plus tard." }
+```
+
 ## Erreurs
 
 Toutes les réponses d'erreur ont la même forme : `{ "code": "...", "message": "..." }`. Le `code`
@@ -147,7 +206,8 @@ logs. C'est au consommateur de traduire pour l'utilisateur.
 | `aucun_texte` | 422 | Rien de lisible sur l'image — reprendre la photo |
 | `delai_depasse` | 504 | La distillation a dépassé `DELAI_DISTILLATION_MS`, ou un moteur son plafond (`DELAI_OCR_MS`, `DELAI_COLLECTE_MS`) |
 | `surcharge` | 429 / 503 | Trop de requêtes, ou plus aucun ouvrier disponible |
-| `moteur_indisponible` | 503 | Un moteur du pipeline (sidecar OCR ou collecte) ne répond pas — réessayer plus tard |
+| `moteur_indisponible` | 503 | Un moteur du pipeline ne répond pas — réessayer plus tard |
+| `maintenance` | 503 | Arrêt volontaire, `MODE_MAINTENANCE` est actif — voir plus haut |
 | `erreur_interne` | 500 | Panne — le détail reste dans les logs |
 
 ## Commandes

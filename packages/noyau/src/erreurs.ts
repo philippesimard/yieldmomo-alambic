@@ -18,6 +18,10 @@ export const CODE_ERREUR = {
   // tout de suite est inutile) et de `erreur_interne` (rien n'est casse dans Alambic) : le
   // consommateur peut reessayer plus tard, le temps que la dependance revienne.
   moteurIndisponible: 'moteur_indisponible',
+  // Arret volontaire, decide par MODE_MAINTENANCE. Distinct de `moteur_indisponible` (rien
+  // n'est en panne) et de `surcharge` (attendre ne suffira pas) : le service ne reviendra que
+  // quand un humain l'aura decide.
+  maintenance: 'maintenance',
   erreurInterne: 'erreur_interne',
 } as const
 

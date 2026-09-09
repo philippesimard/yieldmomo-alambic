@@ -1,5 +1,6 @@
+import { ENVIRONNEMENT } from '@alambic/noyau'
 import { pino } from 'pino'
-import { ENVIRONNEMENT, env } from './config/env'
+import { env } from './config/env'
 
 // Instance pino unique, partagee entre fastify (loggerInstance) et le code qui vit hors du
 // cycle de vie du serveur (l'atelier) : un seul pipeline de logs.

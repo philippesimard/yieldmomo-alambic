@@ -16,7 +16,7 @@ Tous les autres packages en dépendent, et c'est le seul qu'ils ont le droit de 
 | `lignes.ts` | `grouperEnLignes` — regroupe des fragments de texte en lignes lisibles |
 | `distillation.ts` | `Mesures` — le coût de chaque étape |
 | `erreurs.ts` | `CODE_ERREUR`, `ErreurAlambic` |
-| `sante.ts` | `SanteSchema` — la forme des sondes `/health` et `/ready` |
+| `sante.ts` | `SanteSchema`, `STATUT_SANTE`, `ENVIRONNEMENT` — la forme des sondes `/health` et `/ready` |
 
 ## Deux règles qui expliquent le reste
 
@@ -29,6 +29,15 @@ rien prouver.
 **Tout est nullable dans une facture.** Une photo froissée peut ne livrer qu'un total. Rendre une
 facture partielle vaut mieux que refuser la requête — le consommateur sait compléter ce qui
 manque. Chaque champ extrait porte sa confiance, pour qu'il sache aussi quoi faire confirmer.
+
+**Une sonde ne nomme jamais un moteur.** `SanteSchema` publie `condensation: { pret }` et
+`collecte: { pret }` — l'étape, pas le moteur qui travaille derrière. Que la Condensation lise
+avec PaddleOCR ou autre chose est un détail d'implémentation ; le publier obligerait à
+renégocier le contrat avec le consommateur le jour où on en change.
+
+`ENVIRONNEMENT` vit ici et non dans la configuration de l'API parce que l'environnement **sort
+dans la réponse des sondes** : c'est donc un contrat que le consommateur lit, et une seule
+définition évite qu'il dérive de celle qui valide `NODE_ENV`.
 
 `grouperEnLignes` vit ici et non dans une étape parce que **deux** étapes en ont besoin sans avoir
 le droit de se connaître : la Condensation pour donner au condensat son ordre de lecture, la

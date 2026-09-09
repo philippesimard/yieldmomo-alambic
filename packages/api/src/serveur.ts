@@ -1,4 +1,4 @@
-import { CODE_ERREUR, ErreurAlambic } from '@alambic/noyau'
+import { CODE_ERREUR, ENVIRONNEMENT, ErreurAlambic } from '@alambic/noyau'
 import helmet from '@fastify/helmet'
 import multipart from '@fastify/multipart'
 import limiteDebit from '@fastify/rate-limit'
@@ -11,7 +11,7 @@ import {
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
 import { distillerDansAtelier } from './atelier/atelier'
-import { ENVIRONNEMENT, env } from './config/env'
+import { env } from './config/env'
 import { PLAN_PIPELINE } from './distiller'
 import { journal } from './journal'
 import { routeDistiller } from './routes/distiller'
