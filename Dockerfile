@@ -61,6 +61,15 @@ RUN npm ci --omit=dev
 COPY packages ./packages
 
 ENV NODE_ENV=production
+
+# Les operations sharp sont mises en file sur le pool de threads de libuv, qui est PARTAGE par
+# tout le process — les worker_threads compris — et dimensionne a 4 par defaut. Avec un ouvrier
+# par coeur moins un, tous se disputent ces 4 creneaux : c'est un plafond de debit dur, que le
+# nombre d'ouvriers ne deplace pas. Genereux plutot qu'ajuste : un thread inoccupe ne coute
+# qu'une pile, et la valeur doit rester au-dessus d'OUVRIERS sur la plus grosse machine visee.
+# Ici et non dans .env : le pool se cree avant que dotenv n'ait lu quoi que ce soit.
+ENV UV_THREADPOOL_SIZE=16
+
 EXPOSE 3100
 
 # /health et non /ready : les deux sondes exigent un ouvrier vivant et des moteurs prets, mais
@@ -78,4 +87,11 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
 # `node --import tsx` et non `npx tsx` : npx ne relaie pas SIGTERM a son enfant, donc l'arret
 # gracieux ne s'executerait jamais et l'orchestrateur finirait par tuer le process. Ici node
 # est PID 1 et recoit le signal directement.
+# Le service ne sert que du json a partir d'images : rien n'y justifie les privileges de root.
+# Rien n'est ecrit sur disque a l'execution — les venvs et les modeles sont bakes au build et ne
+# sont plus que lus — donc un simple droit de lecture suffit, et les fichiers poses par root le
+# sont en 644/755. Si une evolution venait a ecrire dans /opt/hf ou /opt/paddlex, il faudrait leur
+# donner la propriete a node.
+USER node
+
 CMD ["node", "--import", "tsx", "packages/api/src/index.ts"]

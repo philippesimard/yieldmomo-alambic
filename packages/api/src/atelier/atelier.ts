@@ -14,6 +14,10 @@ const CHEMIN_OUVRIER = new URL('./ouvrier.mjs', import.meta.url)
 // Au-dela de ce seuil dans la fenetre, on cesse de remplacer : l'atelier se vide, /ready passe
 // en 503, et l'orchestrateur redemarre le conteneur — ce qui est le bon sort d'un service qui
 // ne peut plus rien servir.
+//
+// Seules les morts SUBIES comptent ici. Une expiration est une mort voulue, provoquee par notre
+// propre minuterie sur une image trop lourde : la compter reviendrait a vider l'atelier sur une
+// rafale de grandes photos, donc a transformer un pic de charge en panne.
 const MORTS_TOLEREES = 10
 const FENETRE_MORTS_MS = 60_000
 
@@ -32,6 +36,9 @@ type Promesse = {
 type Ouvrier = {
   worker: Worker
   tache: (Promesse & { minuterie: NodeJS.Timeout }) | null
+  // Vrai quand c'est notre minuterie qui l'a tue. Un ouvrier expire n'est pas un ouvrier casse :
+  // il se remplace comme les autres, mais ne nourrit pas le disjoncteur.
+  expire: boolean
 }
 
 let ouvriers: Ouvrier[] = []
@@ -66,24 +73,33 @@ export async function arreterAtelier(): Promise<void> {
   ouvriers = []
 }
 
-export function distillerDansAtelier(
-  image: Buffer,
-  surEvenement?: (evenement: EvenementTrace) => void,
-): Promise<Distillation> {
+// Le refus que l'atelier opposerait a une tache de plus, ou null s'il peut la prendre. Rendre
+// l'erreur plutot que la lever laisse la route s'en servir AVANT de lire le corps : sans ce
+// pre-controle, on paie plusieurs megaoctets de televersement pour decouvrir ensuite que la file
+// est pleine, et on les paie deux fois puisque toBuffer concatene.
+export function refusAtelier(): ErreurAlambic | null {
   if (arretDemande || ouvriers.length === 0) {
-    return Promise.reject(
-      new ErreurAlambic(CODE_ERREUR.surcharge, 503, 'Aucun ouvrier disponible.'),
-    )
+    return new ErreurAlambic(CODE_ERREUR.surcharge, 503, 'Aucun ouvrier disponible.')
   }
 
   // Refuser vite plutot qu'accepter un travail qu'on ne peut pas faire : c'est la contre-
   // pression. Une file sans borne transformerait une surcharge passagere en effondrement,
   // chaque requete attendant derriere toutes les precedentes.
   if (attente.length >= ouvriers.length * PROFONDEUR_FILE_PAR_OUVRIER) {
-    return Promise.reject(
-      new ErreurAlambic(CODE_ERREUR.surcharge, 429, 'Trop de distillations en cours.'),
-    )
+    return new ErreurAlambic(CODE_ERREUR.surcharge, 429, 'Trop de distillations en cours.')
   }
+
+  return null
+}
+
+export function distillerDansAtelier(
+  image: Buffer,
+  surEvenement?: (evenement: EvenementTrace) => void,
+): Promise<Distillation> {
+  // Le pre-controle de la route a pu etre double par une requete concurrente : c'est ici que le
+  // refus fait foi.
+  const refus = refusAtelier()
+  if (refus !== null) return Promise.reject(refus)
 
   return new Promise<Distillation>((resoudre, rejeter) => {
     attente.push({ image: detacher(image), resoudre, rejeter, surEvenement })
@@ -122,12 +138,17 @@ function servirAttente(): void {
 function affecter(ouvrier: Ouvrier, tache: Promesse & { image: ArrayBuffer }): void {
   const minuterie = setTimeout(() => {
     ouvrier.tache = null
+    ouvrier.expire = true
     tache.rejeter(
       new ErreurAlambic(CODE_ERREUR.delaiDepasse, 504, 'La distillation a pris trop de temps.'),
     )
     // Un ouvrier qui depasse le delai est peut-etre bloque dans une boucle : on ne peut pas
     // lui demander d'abandonner, seulement le tuer. Le gestionnaire 'exit' le remplacera.
     journal.warn({ delaiMs: env.DELAI_DISTILLATION_MS }, 'Ouvrier expire, remplacement')
+    // Hors du bassin AVANT terminate, qui est asynchrone : tant qu'il y figure avec une tache
+    // nulle, il parait libre, et servirAttente lui confierait une tache que le thread mourant ne
+    // traiterait jamais — laquelle ressortirait en 500 alors qu'un ouvrier sain l'attendait.
+    ouvriers = ouvriers.filter((candidat) => candidat !== ouvrier)
     void ouvrier.worker.terminate()
   }, env.DELAI_DISTILLATION_MS)
 
@@ -145,7 +166,7 @@ function affecter(ouvrier: Ouvrier, tache: Promesse & { image: ArrayBuffer }): v
 }
 
 function creerOuvrier(): Ouvrier {
-  const ouvrier: Ouvrier = { worker: new Worker(CHEMIN_OUVRIER), tache: null }
+  const ouvrier: Ouvrier = { worker: new Worker(CHEMIN_OUVRIER), tache: null, expire: false }
 
   ouvrier.worker.on('message', (message: MessageOuvrier) => {
     const tache = ouvrier.tache
@@ -190,14 +211,16 @@ function retirer(ouvrier: Ouvrier): void {
   ouvriers = ouvriers.filter((candidat) => candidat !== ouvrier)
   if (arretDemande) return
 
-  const maintenant = Date.now()
-  morts = [...morts, maintenant].filter((instant) => maintenant - instant < FENETRE_MORTS_MS)
-  if (morts.length > MORTS_TOLEREES) {
-    journal.error(
-      { morts: morts.length, ouvriers: ouvriers.length },
-      'Trop d ouvriers morts, remplacement abandonne',
-    )
-    return
+  if (!ouvrier.expire) {
+    const maintenant = Date.now()
+    morts = [...morts, maintenant].filter((instant) => maintenant - instant < FENETRE_MORTS_MS)
+    if (morts.length > MORTS_TOLEREES) {
+      journal.error(
+        { morts: morts.length, ouvriers: ouvriers.length },
+        'Trop d ouvriers morts, remplacement abandonne',
+      )
+      return
+    }
   }
 
   ouvriers.push(creerOuvrier())

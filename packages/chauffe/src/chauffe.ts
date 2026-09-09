@@ -7,6 +7,8 @@ import {
   type Traceur,
 } from '@alambic/noyau'
 import { donnees, vignette } from './apercus'
+// Import a effet de bord : il configure libvips pour tout le process. Voir reglages.ts.
+import './reglages'
 import { documenter } from './document'
 import { depuis, type Etat, type Sortie } from './etat'
 import { finir } from './finition'
@@ -100,7 +102,15 @@ async function encoder(etat: Etat): Promise<Sortie<Encode>> {
   // Sans perte : un artefact jpeg sur un caractere se paie en erreur de lecture, et une erreur
   // de lecture sur un montant se paie en donnee financiere fausse. Le png reste raisonnable sur
   // un gris de recu, ou de larges aplats de papier se compressent bien.
-  const { data, info } = await depuis(etat).png().toBuffer({ resolveWithObject: true })
+  //
+  // compressionLevel au minimum, et non au defaut de zlib : ce tampon ne vit que le temps d'un
+  // POST vers 127.0.0.1, ou l'ocr le redecode aussitot. Le png etant sans perte a TOUS les
+  // niveaux, les pixels sortent identiques au bit pres ; seul le tampon intermediaire grossit,
+  // sur un saut loopback ou l'octet ne coute rien. Ce qui precede porte sur le refus du jpeg,
+  // pas sur l'effort de compression.
+  const { data, info } = await depuis(etat)
+    .png({ compressionLevel: 1 })
+    .toBuffer({ resolveWithObject: true })
   const valeur = { contenu: data, largeur: info.width, hauteur: info.height }
 
   return {

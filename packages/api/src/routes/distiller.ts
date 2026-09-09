@@ -1,7 +1,7 @@
 import { CODE_ERREUR, FactureSchema, ReponseErreurSchema } from '@alambic/noyau'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
-import { distillerDansAtelier } from '../atelier/atelier'
+import { distillerDansAtelier, refusAtelier } from '../atelier/atelier'
 import { exigerCle } from '../cle'
 import { env } from '../config/env'
 
@@ -22,6 +22,25 @@ const REPONSES_ERREUR = {
 // requete ordinaire ne coute qu'un aller-retour.
 const LIMITE_DEBIT = { max: 30, timeWindow: '1 minute' }
 
+// Une liste blanche, et non un prefixe `image/` : les binaires precompiles de sharp embarquent
+// librsvg, donc un image/svg+xml n'est pas refuse mais RENDU — une surface de rendu entiere, et
+// le vecteur classique d'amplification memoire par <use> imbriques. Ce que la liste laisse
+// entrer, c'est ce qu'un appareil photo ou une capture d'ecran produit.
+//
+// busboy rend deja le type en minuscules et sans parametres (parseParams), la comparaison peut
+// donc rester une simple appartenance. `image/jpg` n'est pas standard mais reste courant chez
+// certains clients mobiles : le refuser rendrait un 400 incomprehensible.
+const TYPES_IMAGE_ACCEPTES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/avif',
+  'image/tiff',
+])
+
 // Avant l'authentification : verifier un secret pour un service ferme est du travail pour rien,
 // et l'etat de maintenance est de toute facon public sur les sondes. Les sondes, elles,
 // continuent de repondre — c'est par elles qu'on voit que la maintenance est bien en place.
@@ -34,11 +53,25 @@ async function refuserEnMaintenance(_requete: FastifyRequest, reponse: FastifyRe
   })
 }
 
+// Apres l'authentification : l'etat de charge de l'atelier ne se divulgue pas a un appelant qui
+// n'a pas montre sa cle. Le controle qui fait foi reste dans distillerDansAtelier — celui-ci
+// n'existe que pour refuser AVANT d'avoir lu le televersement, la ou l'ancien ordre payait
+// quinze megaoctets de corps pour decouvrir ensuite que la file etait pleine.
+async function refuserSiSature(_requete: FastifyRequest, reponse: FastifyReply) {
+  const refus = refusAtelier()
+  if (refus === null) return
+
+  // Le corps n'a pas ete consomme : sans cet en-tete, node draine le televersement entier avant
+  // de fermer la socket, ce qui annulerait tout le gain du refus precoce.
+  reponse.header('connection', 'close')
+  throw refus
+}
+
 export const routeDistiller: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/distiller',
     {
-      preHandler: [refuserEnMaintenance, exigerCle],
+      preHandler: [refuserEnMaintenance, exigerCle, refuserSiSature],
       config: { rateLimit: LIMITE_DEBIT },
       // Aucun schema d'entree : le corps est un multipart binaire, que zod ne doit pas voir.
       schema: { response: { 200: FactureSchema, ...REPONSES_ERREUR } },
@@ -63,10 +96,11 @@ export const routeDistiller: FastifyPluginAsyncZod = async (app) => {
 
       // Avant toute lecture : refuser un pdf ou une archive coute une comparaison de chaine,
       // la laisser entrer coute un ouvrier et une decompression.
-      if (!fichier.mimetype.startsWith('image/')) {
-        return reponse
-          .code(400)
-          .send({ code: CODE_ERREUR.formatNonSupporte, message: 'Le fichier doit etre une image.' })
+      if (!TYPES_IMAGE_ACCEPTES.has(fichier.mimetype)) {
+        return reponse.code(400).send({
+          code: CODE_ERREUR.formatNonSupporte,
+          message: "Le format du fichier n'est pas accepte.",
+        })
       }
 
       let image: Buffer

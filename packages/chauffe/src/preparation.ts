@@ -12,6 +12,14 @@ export const LARGEUR_CIBLE = 2000
 // de distillation.
 export const HAUTEUR_MAX = 6000
 
+// Plafond de pixels DECODES. La limite multipart borne les octets compresses, pas la trame :
+// un jpeg de quelques megaoctets peut declarer des dimensions qui decodent en plusieurs centaines
+// de megaoctets, et le resize n'intervient qu'apres le decodage. Le defaut de sharp (~268 Mpx)
+// est bien trop haut pour ce service. Cent megapixels laissent passer tout capteur reel — les
+// telephones qui annoncent davantage enregistrent en douze megapixels sauf demande expresse — et
+// refusent la bombe de decompression.
+const PIXELS_MAX = 100_000_000
+
 // La segmentation travaille sur une miniature : la frontiere entre un ticket et une table est
 // une structure large de plusieurs dizaines de pixels ; la chercher a pleine resolution
 // couterait cent fois plus pour le meme contour.
@@ -33,7 +41,7 @@ export async function preparer(original: Buffer): Promise<Sortie<Prepare>> {
   // Une seule chaine sharp jusqu'au redressement exif et a l'aplatissement : au-dela, les deux
   // sorties divergent, et sharp ne peut pas consommer deux fois le meme pipeline.
   const commun = (): Sharp =>
-    sharp(original, { failOn: 'error' })
+    sharp(original, { failOn: 'error', limitInputPixels: PIXELS_MAX })
       // Sans rotation appliquee ici, une photo prise de travers serait lue couchee : les
       // traitements suivants effacent la metadonnee d'orientation exif.
       .rotate()
@@ -71,7 +79,10 @@ export async function preparer(original: Buffer): Promise<Sortie<Prepare>> {
       ? `Image de ${image.largeur} px de large, sous la cible de ${LARGEUR_CIBLE} px. Elle n'est pas agrandie : l'OCR lira à une résolution insuffisante.`
       : undefined,
     apercus: async () => {
-      const metadonnees = await sharp(original, { failOn: 'error' }).metadata()
+      const metadonnees = await sharp(original, {
+        failOn: 'error',
+        limitInputPixels: PIXELS_MAX,
+      }).metadata()
       return apercusDe(image, {
         orientationExif: metadonnees.orientation ?? null,
         redressee: metadonnees.orientation !== undefined && metadonnees.orientation > 1,

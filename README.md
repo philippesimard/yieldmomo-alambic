@@ -200,7 +200,7 @@ logs. C'est au consommateur de traduire pour l'utilisateur.
 |---|---|---|
 | `cle_invalide` | 401 | En-tête `x-cle-alambic` absente ou fausse |
 | `requete_invalide` | 400 | Le corps n'est pas un multipart contenant une image |
-| `format_non_supporte` | 400 | Le fichier n'est pas une image |
+| `format_non_supporte` | 400 | Le type du fichier n'est pas dans les formats acceptés (voir plus bas) |
 | `image_illisible` | 400 | Fichier tronqué ou format inconnu |
 | `image_trop_lourde` | 413 | Au-delà de `TAILLE_MAX_IMAGE` |
 | `image_trop_floue` | 422 | Photo trop floue pour être lue — reprendre la photo |
@@ -209,7 +209,16 @@ logs. C'est au consommateur de traduire pour l'utilisateur.
 | `surcharge` | 429 / 503 | Trop de requêtes, ou plus aucun ouvrier disponible |
 | `moteur_indisponible` | 503 | Un moteur du pipeline ne répond pas — réessayer plus tard |
 | `maintenance` | 503 | Arrêt volontaire, `MODE_MAINTENANCE` est actif — voir plus haut |
+| `route_inconnue` | 404 | Aucune route ne répond à ce chemin |
 | `erreur_interne` | 500 | Panne — le détail reste dans les logs |
+
+### Formats d'image acceptés
+
+`image/jpeg` (et son variant courant `image/jpg`), `image/png`, `image/webp`, `image/heic`,
+`image/heif`, `image/avif`, `image/tiff`. Tout autre type rend un `format_non_supporte`.
+
+La liste est close, et non un simple préfixe `image/` : les binaires de sharp embarquent librsvg,
+donc un `image/svg+xml` ne serait pas refusé mais *rendu*.
 
 ## Commandes
 

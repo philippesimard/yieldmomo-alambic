@@ -2,7 +2,7 @@ import { CODE_ERREUR, ENVIRONNEMENT, ErreurAlambic } from '@alambic/noyau'
 import helmet from '@fastify/helmet'
 import multipart from '@fastify/multipart'
 import limiteDebit from '@fastify/rate-limit'
-import Fastify, { type FastifyError } from 'fastify'
+import Fastify, { type FastifyError, LogController, type preHandlerAsyncHookHandler } from 'fastify'
 import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
@@ -24,6 +24,19 @@ export async function construireServeur() {
   const app = Fastify({
     // L'instance pino partagee (voir journal.ts) : le meme pipeline sert aussi l'atelier.
     loggerInstance: journal,
+    // Fastify journalise deux lignes par requete. Le vrai signal de ce service est ailleurs : la
+    // ligne de mesures a la fin d'une distillation, et les refus que le gestionnaire d'erreurs
+    // journalise deja explicitement. Sans ca, le healthcheck docker seul ecrit toutes les 30 s.
+    // Par le controleur et non par l'option disableRequestLogging du meme nom, que fastify 5
+    // deprecie et retirera en 6 — elle avertirait a chaque demarrage, dans les logs memes qu'on
+    // cherche a alleger.
+    logController: new LogController({ disableRequestLogging: true }),
+    // Aucune route n'accepte de corps json : @fastify/multipart enregistre un parser en FLUX,
+    // que ce plafond ne traverse jamais (fastify ne l'applique qu'aux parsers qui accumulent).
+    // Il ne borne donc que le parser json par defaut — lequel s'execute AVANT les preHandler,
+    // donc avant l'authentification. Le laisser au defaut d'un mebioctet, c'est offrir a un
+    // appelant sans cle de faire bufferiser et analyser un mebioctet de json a chaque requete.
+    bodyLimit: 1024,
     // Anti-slowloris. 60 s et non 15 : ce delai couvre la RECEPTION de la requete, et une
     // photo de plusieurs megaoctets televersee depuis un lien mobile lent depasse 15 s, donc
     // serait coupee avant meme d'atteindre le gestionnaire.
@@ -38,6 +51,11 @@ export async function construireServeur() {
   }).withTypeProvider<ZodTypeProvider>()
 
   app.setValidatorCompiler(validatorCompiler)
+  // Contrairement a l'habitude fastify, declarer des schemas de reponse n'achete PAS ici le
+  // serialiseur compile de fast-json-stringify : ce compilateur valide la reponse avec zod puis
+  // appelle JSON.stringify. Ce qu'il achete est le contrat — la garantie qu'une facture
+  // malformee n'atteint jamais YieldMomo. A ce prix (des microsecondes sur une requete qui coute
+  // des secondes) c'est le bon echange, et isResponseSerializationError plus bas en depend.
   app.setSerializerCompiler(serializerCompiler)
 
   // Pas de CORS, et c'est deliberé : aucun navigateur n'appelle Alambic, l'image lui parvient
@@ -49,7 +67,14 @@ export async function construireServeur() {
     if (erreur instanceof ErreurAlambic) {
       // Un refus attendu (image illisible, surcharge) n'est pas une panne : il se journalise
       // en avertissement, sinon le vrai bruit se noie dans le bruit ordinaire.
-      const panne = erreur.statut >= 500
+      //
+      // Le code et non le statut : `delai_depasse` (504), `surcharge` (503) et
+      // `moteur_indisponible` (503) sont des issues DOCUMENTEES, dont le message est ecrit ici et
+      // ne contient aucun detail interne. Les juger sur `statut >= 500` les faisait toutes sortir
+      // en « Une erreur interne est survenue. », ce qui rendait illisible la seule chose que
+      // l'appelant avait a savoir. Seul `erreur_interne` signifie « nous sommes casses », et lui
+      // seul se tait — c'est aussi le seul dont le message soit construit ailleurs qu'ici.
+      const panne = erreur.code === CODE_ERREUR.erreurInterne
       requete.log[panne ? 'error' : 'warn'](
         { err: erreur, code: erreur.code },
         'Distillation refusee',
@@ -86,7 +111,9 @@ export async function construireServeur() {
   // En-tetes de securite. Pas de CSP : le service ne rend que du json, aucune page a proteger.
   app.register(helmet, { contentSecurityPolicy: false })
 
-  app.register(limiteDebit, {
+  // Attendu, et non simplement enregistre : le gestionnaire de route inconnue ci-dessous a
+  // besoin du decorateur app.rateLimit(), que ce plugin ne pose qu'une fois charge.
+  await app.register(limiteDebit, {
     ...LIMITE_GLOBALE,
     // Une ErreurAlambic et non un objet nu : @fastify/rate-limit LEVE ce que cette fabrique
     // rend, et un objet nu arrive au gestionnaire d'erreurs sans statut, donc en sort en 500.
@@ -99,6 +126,22 @@ export async function construireServeur() {
         'Trop de requetes, reessayez dans un instant.',
       ),
   })
+
+  // Sans ce gestionnaire, fastify rend son 404 par defaut : une forme etrangere au contrat
+  // { code, message }, qui renvoie en prime le chemin demande en echo. Et surtout,
+  // @fastify/rate-limit s'accroche route par route via onRoute — un chemin qui n'existe pas
+  // n'est donc limite par rien. Le preHandler explicite rebranche la limitation dessus.
+  app.setNotFoundHandler(
+    {
+      // Assertion sure : setNotFoundHandler type son preHandler sur le logger de base de
+      // fastify, alors que cette instance est typee sur celui de pino (loggerInstance). Les deux
+      // designent le meme hook, celui que app.rateLimit vient de fabriquer pour cette instance ;
+      // l'assertion ne fait que rejoindre deux vues d'un objet identique.
+      preHandler: app.rateLimit(LIMITE_GLOBALE) as preHandlerAsyncHookHandler,
+    },
+    async (_requete, reponse) =>
+      reponse.code(404).send({ code: CODE_ERREUR.routeInconnue, message: 'Route inconnue.' }),
+  )
 
   // La limite serveur est le vrai garde-fou : un pre-controle cote appelant se contourne.
   // `files: 1` : une image par requete, une distillation par requete.

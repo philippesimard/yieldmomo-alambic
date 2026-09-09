@@ -65,17 +65,31 @@ export const routeSante: FastifyPluginAsyncZod = async (app) => {
 
   const REPONSES = { 200: SanteSchema, 503: SanteSchema }
 
-  app.get('/health', { schema: { response: REPONSES } }, async (_requete, reponse) => {
-    // En maintenance le process va tres bien : repondre 200 empeche l'orchestrateur de
-    // redemarrer un conteneur qu'un humain a volontairement mis de cote.
-    if (env.MODE_MAINTENANCE) return reponse.send(sante())
-    // Un atelier vide ou un moteur mort pour de bon est exactement la panne qu'un redemarrage
-    // repare, et c'est cette sonde que surveille le HEALTHCHECK du Dockerfile.
-    return peutDistiller() ? reponse.send(sante()) : reponse.code(503).send(sante())
-  })
+  // Un seau a part, et large. Sans lui les sondes partagent le plafond global avec le trafic
+  // client : derriere un proxy, tout s'ecrase sur une seule clef d'ip, et il suffit d'une rafale
+  // ordinaire pour qu'un 429 sur /health fasse redemarrer le conteneur et qu'un 429 sur /ready
+  // le sorte du load balancer. Large mais pas absent : ces routes repondent sans authentification.
+  const LIMITE_SONDES = { config: { rateLimit: { max: 600, timeWindow: '1 minute' } } }
 
-  app.get('/ready', { schema: { response: REPONSES } }, async (_requete, reponse) => {
-    if (env.MODE_MAINTENANCE) return reponse.code(503).send(sante())
-    return peutDistiller() ? reponse.send(sante()) : reponse.code(503).send(sante())
-  })
+  app.get(
+    '/health',
+    { ...LIMITE_SONDES, schema: { response: REPONSES } },
+    async (_requete, reponse) => {
+      // En maintenance le process va tres bien : repondre 200 empeche l'orchestrateur de
+      // redemarrer un conteneur qu'un humain a volontairement mis de cote.
+      if (env.MODE_MAINTENANCE) return reponse.send(sante())
+      // Un atelier vide ou un moteur mort pour de bon est exactement la panne qu'un redemarrage
+      // repare, et c'est cette sonde que surveille le HEALTHCHECK du Dockerfile.
+      return peutDistiller() ? reponse.send(sante()) : reponse.code(503).send(sante())
+    },
+  )
+
+  app.get(
+    '/ready',
+    { ...LIMITE_SONDES, schema: { response: REPONSES } },
+    async (_requete, reponse) => {
+      if (env.MODE_MAINTENANCE) return reponse.code(503).send(sante())
+      return peutDistiller() ? reponse.send(sante()) : reponse.code(503).send(sante())
+    },
+  )
 }

@@ -115,16 +115,22 @@ const EnvSchema = z
       })
     }
 
-    if (valeurs.NODE_ENV !== ENVIRONNEMENT.production) return
-
-    if (valeurs.ALAMBIC_CLE === undefined) {
+    // La clef se verifie PARTOUT sauf en developpement, et non en production seulement : sans
+    // clef configuree, exigerCle laisse tout passer, et `test` est un environnement deployable
+    // comme un autre. Une instance lancee par megarde en NODE_ENV=test tournerait alors en
+    // service de traitement d'images ouvert. Le confort du developpement est intact.
+    if (valeurs.NODE_ENV !== ENVIRONNEMENT.development && valeurs.ALAMBIC_CLE === undefined) {
       contexte.addIssue({
         code: 'custom',
         path: ['ALAMBIC_CLE'],
         message:
-          'ALAMBIC_CLE est requise en production : sans elle, le service accepte des images de nimporte qui. Generer avec `openssl rand -base64 32`.',
+          'ALAMBIC_CLE est requise hors developpement : sans elle, le service accepte des images de nimporte qui. Generer avec `openssl rand -base64 32`.',
       })
     }
+
+    // Les moteurs, eux, restent une exigence de production seule : hors production le transform
+    // retombe volontairement sur le moteur factice, dont un banc ou un test a besoin.
+    if (valeurs.NODE_ENV !== ENVIRONNEMENT.production) return
 
     if (valeurs.MOTEUR_OCR === undefined) {
       contexte.addIssue({

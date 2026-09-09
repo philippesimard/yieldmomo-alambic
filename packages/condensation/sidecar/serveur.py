@@ -224,6 +224,12 @@ def principal():
     # toute reponse http vaut ensuite « pret ».
     pipeline.predict(np.full((64, 256, 3), 255, dtype=np.uint8))
 
+    # HTTP/1.0 (le defaut de BaseHTTPRequestHandler), donc une socket par appel et aucun
+    # keep-alive. C'est deliberé. Passer protocol_version a 'HTTP/1.1' economiserait une poignee
+    # de microsecondes de poignee de main sur du loopback, sur une requete qui en coute des
+    # millions — et exigerait de fermer explicitement la connexion sur les chemins qui repondent
+    # SANS avoir lu le corps (route inconnue, corps trop lourd) : les octets non lus y
+    # desynchroniseraient la requete suivante. Le gain ne paie pas ce risque.
     serveur = ThreadingHTTPServer(('127.0.0.1', arguments.port), Requetes)
     print(f'pret sur le port {arguments.port}', file=sys.stderr, flush=True)
     serveur.serve_forever()

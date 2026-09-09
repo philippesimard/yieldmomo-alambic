@@ -22,6 +22,10 @@ export const CODE_ERREUR = {
   // n'est en panne) et de `surcharge` (attendre ne suffira pas) : le service ne reviendra que
   // quand un humain l'aura decide.
   maintenance: 'maintenance',
+  // Aucune route ne repond a ce chemin. Distinct de `requete_invalide` (la route existe, la
+  // requete est mal formee) : ici c'est l'appelant qui se trompe d'adresse, et reessayer le
+  // meme chemin ne donnera jamais rien.
+  routeInconnue: 'route_inconnue',
   erreurInterne: 'erreur_interne',
 } as const
 
