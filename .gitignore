@@ -24,3 +24,7 @@ corpus/
 # Python du sidecar : le venv est propre au poste, le cache de bytecode aussi.
 packages/*/sidecar/.venv/
 __pycache__/
+
+# Checkpoints produits par le fine-tuning de la Collecte : plusieurs centaines de Mo par
+# modele, reproductibles a partir du jeu de donnees et du script.
+packages/collecte/entrainement/modeles/

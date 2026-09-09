@@ -27,6 +27,7 @@ MODELE_PAR_DEFAUT = 'doc2txt/tst_lilt_cord_xlm_ft'
 
 # Les fenetres du modele font 512 tokens ; le chevauchement laisse du contexte des deux cotes
 # aux mots d'un recu qui deborde d'une fenetre.
+LONGUEUR_MAX_TOKENS = 512
 CHEVAUCHEMENT_TOKENS = 128
 
 ETIQUETTE_EXTERIEURE = 'O'
@@ -42,7 +43,11 @@ verrou = threading.Lock()
 def charger(nom_modele):
     from transformers import AutoTokenizer, LiltForTokenClassification
 
-    tok = AutoTokenizer.from_pretrained(nom_modele)
+    # LiLT s'appuie sur XLM-RoBERTa : la detection Mistral de transformers le prend pour un
+    # tokenizer a corriger, le drapeau explicite dit non sans rien modifier.
+    tok = AutoTokenizer.from_pretrained(
+        nom_modele, model_max_length=LONGUEUR_MAX_TOKENS, fix_mistral_regex=False
+    )
     mdl = LiltForTokenClassification.from_pretrained(nom_modele)
     mdl.eval()
     return tok, mdl
@@ -55,6 +60,7 @@ def etiqueter(textes, boites):
         textes,
         is_split_into_words=True,
         truncation=True,
+        max_length=LONGUEUR_MAX_TOKENS,
         stride=CHEVAUCHEMENT_TOKENS,
         return_overflowing_tokens=True,
         padding=True,
