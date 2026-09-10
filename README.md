@@ -277,14 +277,22 @@ Le checkpoint maison pèse plus d'un Go : il ne se versionne pas et vit sur un b
 S3 (OVH Object Storage). L'y déposer :
 
 ```bash
-npm run publier-modele -- --bucket <bucket>
+npm run publier-modele -- --bucket <nom-du-bucket>
 ```
 
 La commande compresse `outils/entrainement/modeles/lilt-alambic`, refuse d'écraser un objet
 déjà publié — une image de production l'a peut-être déjà consommé — et imprime en sortie la
-ligne `MODELE_S3_URI` à recopier dans Dokploy. Les clés d'accès viennent de la chaîne habituelle
-du SDK (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, ou `~/.aws/credentials`) ; le dépôt n'en
-lit ni n'en stocke aucune.
+ligne `MODELE_S3_URI` à recopier dans Dokploy. Sans `--bucket`, elle le demande aussi, et
+vérifie l'accès avant de compresser : une clé mal tapée se voit tout de suite, pas après
+plusieurs minutes de gzip.
+
+`--bucket` attend le **nom seul** du bucket (`alambic-modeles`), pas l'URL de l'endpoint :
+celui-ci vaut déjà `https://s3.bhs.io.cloud.ovh.net` et se change avec `--endpoint`.
+
+**Les clés se demandent au terminal**, la clé secrète sans écho. Elles ne vivent donc ni dans un
+fichier du dépôt, ni dans l'historique du shell, et rien n'en subsiste après la commande — le
+dépôt n'en lit ni n'en stocke aucune. Un environnement portant déjà `AWS_ACCESS_KEY_ID` et
+`AWS_SECRET_ACCESS_KEY` court-circuite la saisie ; c'est le seul moyen de publier sans terminal.
 
 **L'image descend ce modèle au build, jamais à l'exécution.** C'est ce qui garde le service sans
 état — rien ne s'écrit sur disque, rien ne dépend du réseau au démarrage, deux répliques sont

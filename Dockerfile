@@ -10,9 +10,10 @@ WORKDIR /app
 
 # --- Sidecar ocr (etape Condensation) ---
 # La couche la plus stable d'abord : elle ne bouge que si les dependances python changent.
-# libgl1 et libglib2.0-0 : exigees par l'opencv que paddleocr installe.
+# libgl1 et libglib2.0-0 : exigees par l'opencv que paddleocr installe. libgomp1 : le runtime
+# OpenMP que libpaddle.so charge au demarrage, absent de node:22-slim.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 python3-venv libgl1 libglib2.0-0 \
+      python3 python3-venv libgl1 libglib2.0-0 libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 COPY packages/condensation/sidecar/requirements.lock ./packages/condensation/sidecar/
 RUN python3 -m venv /opt/ocr \
