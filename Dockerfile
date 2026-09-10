@@ -13,7 +13,7 @@ WORKDIR /app
 # libgl1 et libglib2.0-0 : exigees par l'opencv que paddleocr installe. libgomp1 : le runtime
 # OpenMP que libpaddle.so charge au demarrage, absent de node:22-slim.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 python3-venv libgl1 libglib2.0-0 libgomp1 \
+      python3 python3-venv libgl1 libglib2.0-0 libgomp1 curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY packages/condensation/sidecar/requirements.lock ./packages/condensation/sidecar/
 RUN python3 -m venv /opt/ocr \
@@ -41,37 +41,31 @@ ENV HF_HOME=/opt/hf
 # compatible S3 (OVH Object Storage), et `npm run publier-modele` l'y depose. Vide, l'image se
 # rabat sur le checkpoint public du Hub, qui travaille en zero-shot sur un recu quebecois : bon
 # pour un essai, jamais pour la production — env.ts refuse d'y demarrer sans MODELE_COLLECTE.
-ARG MODELE_S3_URI=""
-ARG S3_ENDPOINT=https://s3.bhs.io.cloud.ovh.net
-ARG S3_REGION=bhs
+ARG MODELE_URL=""
 
-# Les poids entrent au build, jamais a l'execution : le conteneur reste sans etat et aucune
-# clef S3 ne descend sur le serveur. --mount=type=secret et non ARG : un ARG resterait lisible
-# dans `docker history`. Pas de pipe `aws | tar` non plus : le shell de debian ignore pipefail,
-# et une descente coupee en deux passerait pour un succes.
-RUN --mount=type=secret,id=S3_CLE \
-    --mount=type=secret,id=S3_SECRET \
-    if [ -z "$MODELE_S3_URI" ]; then \
+# Les poids entrent au build, jamais a l'execution : le conteneur reste sans etat. MODELE_URL
+# est une URL presignee que `npm run publier-modele` emet, valable sept jours : aucune clef S3
+# ne descend sur le serveur, et l'URL ne vaut plus rien une fois expiree. Un secret de build
+# serait plus etanche encore, mais Dokploy ne sait pas en monter.
+# Pas de pipe `curl | tar` : le shell de debian ignore pipefail, et une descente coupee en deux
+# passerait pour un succes. --fail pour qu'une reponse 403 ne s'ecrive pas dans l'archive.
+RUN if [ -z "$MODELE_URL" ]; then \
       /opt/collecte/bin/python packages/collecte/sidecar/serveur.py --preparer; \
     else \
-      python3 -m venv /tmp/s3 \
-      && /tmp/s3/bin/pip install --no-cache-dir 'awscli<2' \
-      && AWS_ACCESS_KEY_ID="$(cat /run/secrets/S3_CLE)" \
-         AWS_SECRET_ACCESS_KEY="$(cat /run/secrets/S3_SECRET)" \
-         AWS_DEFAULT_REGION="$S3_REGION" \
-         /tmp/s3/bin/aws --endpoint-url "$S3_ENDPOINT" s3 cp "$MODELE_S3_URI" /tmp/modele.tar.gz \
+      curl --fail --silent --show-error --location --retry 3 \
+           --output /tmp/modele.tar.gz "$MODELE_URL" \
       && mkdir -p /opt/modele-collecte \
       && tar -xzf /tmp/modele.tar.gz -C /opt/modele-collecte --strip-components=1 \
-      && rm -rf /tmp/s3 /tmp/modele.tar.gz \
+      && rm -f /tmp/modele.tar.gz \
       && chmod -R a+rX /opt/modele-collecte \
       && /opt/collecte/bin/python packages/collecte/sidecar/serveur.py \
            --preparer --modele /opt/modele-collecte; \
     fi
 
 ENV HF_HUB_OFFLINE=1
-# Expansion docker : le chemin quand un bucket est configure, vide sinon. Vide vaut « non
-# definie » pour env.ts, qui retombe alors sur le checkpoint public — et refuse en production.
-ENV MODELE_COLLECTE=${MODELE_S3_URI:+/opt/modele-collecte}
+# Expansion docker : le chemin quand une URL est fournie, vide sinon. Vide vaut « non definie »
+# pour env.ts, qui retombe alors sur le checkpoint public — et refuse en production.
+ENV MODELE_COLLECTE=${MODELE_URL:+/opt/modele-collecte}
 ENV CHEMIN_PYTHON_COLLECTE=/opt/collecte/bin/python
 
 # --- Service node ---
