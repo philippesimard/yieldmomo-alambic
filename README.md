@@ -312,12 +312,16 @@ est **refusé** si `MODELE_COLLECTE` n'est pas renseignée.
 | General | Dockerfile Path | `Dockerfile` |
 | General | Docker Context Path | `.` |
 | Domains | Container Port | `3100` |
-| Environment | Build Time Arguments | `MODELE_URL` (URL presignee, sept jours) |
-| Environment | Build-time Secrets | `S3_CLE`, `S3_SECRET` |
+| Environment | Build Time Arguments | `MODELE_URL` (URL présignée, sept jours) |
 | Environment | Environment Variables | le contenu de [.env.production.exemple](.env.production.exemple) |
 
-Les clés S3 passent par les **secrets** de build et non par les arguments : un argument reste
-lisible dans `docker history` de l'image produite, un secret ne laisse rien.
+Aucune clé S3 n'entre dans le build : `publier-modele` rend une **URL présignée**, valable sept
+jours, et c'est elle seule que Dokploy transmet. Un secret de build serait plus étanche encore,
+mais Dokploy ne sait pas en monter — et une clé passée en argument resterait lisible dans le
+`docker history` de l'image produite, ce qu'une URL expirée ne risque pas.
+
+Passé les sept jours, l'image ne se reconstruit plus (curl renvoie 403). Represigner sans rien
+téléverser : `npm run publier-modele -- --bucket <bucket> --nom <objet.tar.gz> --url-seulement`
 
 `SAUTS_PROXY=1` : Traefik est le seul saut devant le service, et c'est lui qui pose le vrai
 `X-Forwarded-For`. Sans ça, la limitation de débit compterait tout le trafic sur l'IP du proxy.

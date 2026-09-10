@@ -211,6 +211,12 @@ const client = new S3Client({
   credentials: identifiants,
   // ovh sert les buckets sur l'endpoint, pas sur <bucket>.<endpoint>.
   forcePathStyle: true,
+  // Le sdk ajoute par defaut des sommes de controle crc a chaque requete et exige leur echo
+  // dans les reponses : c'est un dialecte d'aws que les autres S3 ne parlent pas tous, et il
+  // s'invite jusque dans l'URL signee (x-amz-checksum-mode). On ne les demande que si l'api
+  // l'impose.
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
 })
 
 // Une clef mal tapee ou un bucket absent doivent se voir maintenant : la compression qui suit
@@ -306,6 +312,27 @@ if (!urlSeulement) {
 const url = await getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: cle }), {
   expiresIn: DUREE_URL_S,
 })
+
+// Une URL signee ne prouve qu'une identite : le droit de lire l'objet se juge a chaque
+// requete, cote bucket. Une clef qui liste le bucket sans pouvoir lire ses objets produit donc
+// une URL parfaitement signee et parfaitement inutile — un octet suffit a le savoir avant de
+// la donner a Dokploy, plutot que d'attendre le 403 de curl au fond d'un build.
+const essai = await fetch(url, {
+  headers: { range: 'bytes=0-0' },
+  signal: AbortSignal.timeout(30_000),
+}).catch((erreur: unknown) =>
+  abandonner(`URL injoignable : ${erreur instanceof Error ? erreur.message : String(erreur)}`),
+)
+if (!essai.ok) {
+  const corps = await essai.text()
+  const code = /<Code>([^<]+)<\/Code>/.exec(corps)?.[1] ?? `http ${essai.status}`
+  abandonner(
+    `URL signee, mais le bucket la refuse (${code}). La clef ${identifiants.accessKeyId} liste ${bucket} sans avoir le droit d'en lire les objets : lui donner la lecture sur ce bucket dans l'espace client OVH, ou signer avec une clef qui l'a.`,
+  )
+}
+// 206 attendu. Le corps est abandonne tout de suite : si l'endpoint ignorait Range, il
+// enverrait le modele entier.
+await essai.body?.cancel()
 
 const expiration = new Date(Date.now() + DUREE_URL_S * 1000).toISOString().slice(0, 10)
 
