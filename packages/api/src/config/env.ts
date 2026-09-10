@@ -157,13 +157,13 @@ const EnvSchema = z
     // Le seul echec silencieux du lot : le checkpoint public CHARGE, il est dans l'image, et
     // rend des factures — simplement moins bien lues, en zero-shot sur un recu quebecois.
     // Aucune sonde ne le verrait. L'image renseigne cette cle quand elle est construite avec
-    // MODELE_S3_URI ; la definir dans le tableau de bord ecraserait cette valeur.
+    // MODELE_URL ; la definir dans le tableau de bord ecraserait cette valeur.
     if (valeurs.MODELE_COLLECTE === undefined) {
       contexte.addIssue({
         code: 'custom',
         path: ['MODELE_COLLECTE'],
         message:
-          'MODELE_COLLECTE est requise en production : sans elle, le service lirait les recus avec le checkpoint public, en zero-shot, sans rien signaler. Construire avec MODELE_S3_URI, et laisser cette cle absente du tableau de bord.',
+          'MODELE_COLLECTE est requise en production : sans elle, le service lirait les recus avec le checkpoint public, en zero-shot, sans rien signaler. Construire avec MODELE_URL, et laisser cette cle absente du tableau de bord.',
       })
     }
   })

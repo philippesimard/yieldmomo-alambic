@@ -123,11 +123,11 @@ npm run publier-modele -- --bucket <bucket>
 ```
 
 La commande compresse `modeles/lilt-alambic`, refuse d'écraser un objet déjà publié — une image
-de production l'a peut-être déjà consommé — et imprime la ligne `MODELE_S3_URI` à recopier dans
+de production l'a peut-être déjà consommé — et imprime la ligne `MODELE_URL` à recopier dans
 Dokploy. L'image redescend l'archive **au build** : en production rien ne se télécharge, rien ne
 s'écrit sur disque, et aucune clé S3 ne descend sur le serveur.
 
-Une image construite sans `MODELE_S3_URI` embarque le checkpoint public à la place. Comme il
+Une image construite sans `MODELE_URL` embarque le checkpoint public à la place. Comme il
 charge sans erreur et rend des factures — simplement moins bien lues — le démarrage en
 `NODE_ENV=production` est refusé quand `MODELE_COLLECTE` n'est pas renseignée, plutôt que de
 laisser passer un service qui ment en silence.

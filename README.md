@@ -282,7 +282,7 @@ npm run publier-modele -- --bucket <nom-du-bucket>
 
 La commande compresse `outils/entrainement/modeles/lilt-alambic`, refuse d'écraser un objet
 déjà publié — une image de production l'a peut-être déjà consommé — et imprime en sortie la
-ligne `MODELE_S3_URI` à recopier dans Dokploy. Sans `--bucket`, elle le demande aussi, et
+ligne `MODELE_URL` à recopier dans Dokploy. Sans `--bucket`, elle le demande aussi, et
 vérifie l'accès avant de compresser : une clé mal tapée se voit tout de suite, pas après
 plusieurs minutes de gzip.
 
@@ -298,7 +298,7 @@ dépôt n'en lit ni n'en stocke aucune. Un environnement portant déjà `AWS_ACC
 état — rien ne s'écrit sur disque, rien ne dépend du réseau au démarrage, deux répliques sont
 identiques — et ce qui évite qu'une clé S3 traîne sur le serveur.
 
-Une image construite sans `MODELE_S3_URI` embarque à la place le checkpoint public entraîné sur
+Une image construite sans `MODELE_URL` embarque à la place le checkpoint public entraîné sur
 CORD, qui travaille en zéro-shot sur un reçu québécois : commode pour un essai, jamais pour la
 production. C'est précisément le genre de panne qui ne se voit pas — le modèle public *charge*
 et rend des factures, simplement moins bien lues — donc le démarrage en `NODE_ENV=production`
@@ -312,7 +312,7 @@ est **refusé** si `MODELE_COLLECTE` n'est pas renseignée.
 | General | Dockerfile Path | `Dockerfile` |
 | General | Docker Context Path | `.` |
 | Domains | Container Port | `3100` |
-| Environment | Build Time Arguments | `MODELE_S3_URI`, et au besoin `S3_ENDPOINT` / `S3_REGION` |
+| Environment | Build Time Arguments | `MODELE_URL` (URL presignee, sept jours) |
 | Environment | Build-time Secrets | `S3_CLE`, `S3_SECRET` |
 | Environment | Environment Variables | le contenu de [.env.production.exemple](.env.production.exemple) |
 
