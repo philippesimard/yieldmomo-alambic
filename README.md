@@ -317,7 +317,7 @@ est **refusé** si `MODELE_COLLECTE` n'est pas renseignée.
 
 Aucune clé S3 n'entre dans le build : `publier-modele` rend une **URL présignée**, valable sept
 jours, et c'est elle seule que Dokploy transmet. Un secret de build serait plus étanche encore,
-mais Dokploy ne sait pas en monter — et une clé passée en argument resterait lisible dans le
+mais son montage dépend de la plateforme — et une clé passée en argument resterait lisible dans le
 `docker history` de l'image produite, ce qu'une URL expirée ne risque pas.
 
 Passé les sept jours, l'image ne se reconstruit plus (curl renvoie 403). Represigner sans rien

@@ -5,9 +5,9 @@
 //   npm run publier-modele -- --bucket alambic-modeles
 //
 // Rend une URL presignee, valable une semaine. C'est elle que l'image recoit au build (voir
-// Dockerfile, MODELE_URL) : le build n'a alors besoin d'aucune clef S3 — beaucoup de
-// plateformes, Dokploy comprise, ne savent pas monter de secret de build — et une URL expiree
-// ne donne acces a rien. En production rien ne se telecharge et rien ne s'ecrit sur disque.
+// Dockerfile, MODELE_URL) : le build n'a alors besoin d'aucune clef S3 — un secret de build
+// depend de la plateforme, une URL marche partout — et une URL expiree ne donne acces a rien.
+// En production rien ne se telecharge et rien ne s'ecrit sur disque.
 //
 // --url-seulement represigne un objet deja publie, sans rien televerser : une URL dure sept
 // jours, un modele bien plus longtemps.

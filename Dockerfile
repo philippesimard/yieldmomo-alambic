@@ -46,7 +46,7 @@ ARG MODELE_URL=""
 # Les poids entrent au build, jamais a l'execution : le conteneur reste sans etat. MODELE_URL
 # est une URL presignee que `npm run publier-modele` emet, valable sept jours : aucune clef S3
 # ne descend sur le serveur, et l'URL ne vaut plus rien une fois expiree. Un secret de build
-# serait plus etanche encore, mais Dokploy ne sait pas en monter.
+# serait plus etanche encore, mais son montage depend de la plateforme ; l'URL marche partout.
 # Pas de pipe `curl | tar` : le shell de debian ignore pipefail, et une descente coupee en deux
 # passerait pour un succes. --fail pour qu'une reponse 403 ne s'ecrive pas dans l'archive.
 RUN if [ -z "$MODELE_URL" ]; then \
