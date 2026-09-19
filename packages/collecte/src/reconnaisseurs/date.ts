@@ -1,5 +1,5 @@
 import type { BlocTexte, Facture } from '@alambic/noyau'
-import { confianceDe, texteDe } from './commun'
+import { confianceDe, normaliser, texteDe } from './commun'
 
 // Une date lue dans un format sans ambiguite : annee en tete, ou mois ecrit en toutes lettres.
 const FACTEUR_DATE_SURE = 0.9
@@ -16,9 +16,6 @@ const ISO = /\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b/
 const JOUR_MOIS_ANNEE = /\b(\d{1,2})[-/.](\d{1,2})[-/.](20\d{2}|\d{2})\b/
 const JOUR_MOIS_ECRIT_ANNEE = /\b(\d{1,2})(?:er)?[\s-]+([a-z]+)\.?[\s-]+(20\d{2})\b/
 const MOIS_ECRIT_JOUR_ANNEE = /\b([a-z]+)\.?[\s-]+(\d{1,2}),?[\s-]+(20\d{2})\b/
-
-// La plage des signes combinants (U+0300 a U+036F), retires apres decomposition NFD.
-const DIACRITIQUES = /[̀-ͯ]/g
 
 // Mois francais et anglais, entiers et abreges, sans accents : le texte est deja normalise
 // avant la recherche.
@@ -75,8 +72,14 @@ export function reconnaitreDate(lignes: readonly BlocTexte[][]): Facture['date']
   return null
 }
 
+// Une ligne qui porte une date n'est jamais une enseigne, meme quand son mois en nomme une
+// (« Sam., 15 Avril 2026 ») : la lecture du marchand s'en sert pour l'ecarter.
+export function porteUneDate(texte: string): boolean {
+  return dateDe(texte) !== null
+}
+
 function dateDe(texte: string): DateLue | null {
-  const normalise = texte.normalize('NFD').replace(DIACRITIQUES, '').toLowerCase()
+  const normalise = normaliser(texte)
 
   const iso = normalise.match(ISO)
   if (iso !== null) {

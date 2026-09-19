@@ -1,0 +1,440 @@
+{
+  "_lisezMoi": "Recus ecrits a la main que le rejeu de la categorie (npm run rejeu:categorie) passe a chaque changement de regle. Chacun porte la reponse qu'il doit donner : null quand rien ne nomme le commerce, sinon la case du catalogue. Ce sont des en-tetes et des formes de recus plausibles, pas des photos : ils ne contiennent aucune donnee personnelle. Un piege ajoute ne s'ecrit qu'avec la reponse voulue, jamais avec celle que le code donne deja.",
+  "pieges": [
+    {
+      "nom": "Gabarit IGA sans enseigne lisible : le libelle du caissier",
+      "lignes": [
+        "(418) 658-3897",
+        "Servi par: Libre Service 22",
+        "Caissier : Tristan",
+        "TOTAL $7.49"
+      ],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Serveur au prenom d'enseigne",
+      "lignes": ["Servi par: Amir", "TOTAL $12.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Releve de terminal coupe : le mode de paiement",
+      "lignes": ["Mode de paiement", "VISA", "MONTANT $12.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Formule de politesse",
+      "lignes": ["Merci et bonne soirée!", "TOTAL $12.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Date au mois d'enseigne",
+      "lignes": ["Sam., 15 Avril 2026", "TOTAL $12.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Adresse sur une rue d'enseigne",
+      "lignes": ["1234 boul. St-Hubert", "Montréal, QC H2J 2Y7", "TOTAL $12.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Adresse sur une route d'eglise",
+      "lignes": ["123 Route de l'Église", "Saint-Augustin, QC G3A 1A1", "TOTAL $12.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Station-service avec depanneur",
+      "lignes": [
+        "ESSO MARCHE EXPRESS",
+        "1500 boul. Laurier",
+        "ESSENCE ORDINAIRE 45.20 L",
+        "TOTAL $72.30"
+      ],
+      "attendu": {
+        "categorie": "transport",
+        "sousCategorie": "essence"
+      }
+    },
+    {
+      "nom": "Couche-Tard reste une station-service (categorie du commerce)",
+      "lignes": ["COUCHE-TARD #1234", "CHIPS BBQ $3.49", "TOTAL $3.66"],
+      "attendu": {
+        "categorie": "transport",
+        "sousCategorie": "essence"
+      }
+    },
+    {
+      "nom": "Tim Hortons : le groupe sans la sous-categorie",
+      "lignes": ["TIM HORTONS #1234", "CAFE MOYEN $2.15", "TOTAL $2.47"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Maxi avec numero de succursale",
+      "lignes": ["MAXI STE-FOY QUATRE-BOURGEOIS (#7222)", "TOTAL $6.78"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "epicerie"
+      }
+    },
+    {
+      "nom": "Costco reste une epicerie (categorie du commerce)",
+      "lignes": ["COSTCO WHOLESALE #503", "TELEVISEUR 55PO $599.99", "TOTAL $689.84"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "epicerie"
+      }
+    },
+    {
+      "nom": "Addition d'un restaurant inconnu",
+      "lignes": [
+        "CHEZ ROSALIE",
+        "ADDITION #12345-1",
+        "TABLE #7",
+        "CLIENT # 1",
+        "1 PLAT DU JOUR $18.00 FP",
+        "TOTAL $20.70",
+        "FACTURE ORIGINALE"
+      ],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Addition au bas coupe : l'addition et la table suffisent",
+      "lignes": ["LE COMPTOIR", "ADDITION #20458-1", "TABLE #12", "1 BURGER $16.00 FP"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Addition en ligne d'en-tete avec le serveur",
+      "lignes": [
+        "CANTINE DU COIN",
+        "Table 30 Serveur Simon",
+        "1 POUTINE $12.00",
+        "TOTAL $13.80",
+        "FACTURE ORIGINALE"
+      ],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Bar d'hotel : l'hotel cede a l'addition",
+      "lignes": [
+        "HOTEL CHATEAU LAURIER",
+        "ADDITION #365945-1",
+        "TABLE #11",
+        "1 PINTE $9.00 FPS",
+        "TOTAL $10.35",
+        "FACTURE REVISEE"
+      ],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Microbrasserie avec service aux tables",
+      "lignes": [
+        "MICROBRASSERIE DU LAC",
+        "ADDITION #20331-1",
+        "TABLE #4",
+        "2 IPA $16.00 FPS",
+        "TOTAL $18.40",
+        "FACTURE ORIGINALE"
+      ],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Salle de quilles avec addition : deux groupes, aucune reponse",
+      "lignes": [
+        "QUILLES DE LA CAPITALE",
+        "ADDITION #4521-1",
+        "TABLE #3",
+        "2 PARTIES $12.00",
+        "TOTAL $13.80",
+        "FACTURE ORIGINALE"
+      ],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Taxi sous le meme regime de facturation : pas de table, pas de restaurant",
+      "lignes": [
+        "TAXI COOP QUEBEC",
+        "Voiture 214",
+        "Prise en charge $3.50",
+        "TOTAL $23.50",
+        "FACTURE ORIGINALE"
+      ],
+      "attendu": {
+        "categorie": "transport",
+        "sousCategorie": "taxi"
+      }
+    },
+    {
+      "nom": "Politique de retour qui finit sur la facture originale",
+      "lignes": [
+        "SIMONS",
+        "CHANDAIL $45.00",
+        "TOTAL $51.74",
+        "Retour en 30 jours sur présentation de la",
+        "facture originale"
+      ],
+      "attendu": {
+        "categorie": "personnel",
+        "sousCategorie": "vetements"
+      }
+    },
+    {
+      "nom": "Meuble a deux lignes : TABLE 6 PLACES n'est pas un numero de table",
+      "lignes": [
+        "BOUTIQUE DU BOIS FRANC",
+        "TABLE 6 PLACES",
+        "1 @ 499,00",
+        "TOTAL $573.60",
+        "FACTURE ORIGINALE"
+      ],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Possessif anglais",
+      "lignes": ["HARVEY'S #1234", "COMBO BURGER $12.49", "TOTAL $14.36"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Mary Brown's n'est pas la chaussure Browns",
+      "lignes": ["MARY BROWN'S CHICKEN", "TOTAL $15.00"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Esperluette espacee",
+      "lignes": ["H & M HENNES & MAURITZ", "CHANDAIL $29.99", "TOTAL $34.48"],
+      "attendu": {
+        "categorie": "personnel",
+        "sousCategorie": "vetements"
+      }
+    },
+    {
+      "nom": "Esperluette collee au numero de succursale",
+      "lignes": ["A&W #1234 STE-FOY", "TEEN BURGER $8.99", "TOTAL $10.34"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Des initiales ne font pas A&W",
+      "lignes": ["A.W. PLOMBERIE", "RACCORD 1/2 PO $4.99", "TOTAL $5.74"],
+      "attendu": {
+        "categorie": "logement",
+        "sousCategorie": "entretien-maison"
+      }
+    },
+    {
+      "nom": "Quartier dans le nom de succursale",
+      "lignes": ["IGA SAINT-HENRI", "BANANES $1.34", "TOTAL $1.34"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "epicerie"
+      }
+    },
+    {
+      "nom": "Coiffure sans rendez-vous",
+      "lignes": ["COIFFURE SANS RENDEZ-VOUS", "COUPE $25.00", "TOTAL $28.74"],
+      "attendu": {
+        "categorie": "personnel",
+        "sousCategorie": "soins-personnels"
+      }
+    },
+    {
+      "nom": "Formule d'accueil collee a l'enseigne",
+      "lignes": ["BIENVENUE CHEZMETRO", "LAIT 2% $6.49", "TOTAL $6.49"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "epicerie"
+      }
+    },
+    {
+      "nom": "Nom coupe par l'ocr",
+      "lignes": ["3 UNI QLO", "T-shirt $9.90", "TOTAL $11.38"],
+      "attendu": {
+        "categorie": "personnel",
+        "sousCategorie": "vetements"
+      }
+    },
+    {
+      "nom": "Deux mots courts ne se recollent pas",
+      "lignes": ["LA FLEUR DE LYS", "TOTAL $12.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Site web en repli quand le nom ne dit rien",
+      "lignes": ["MERCI DE VOTRE VISITE", "WWW.UNIQLO.COM", "T-shirt $9.90", "TOTAL $11.38"],
+      "attendu": {
+        "categorie": "personnel",
+        "sousCategorie": "vetements"
+      }
+    },
+    {
+      "nom": "Plateforme de paiement : pas une enseigne",
+      "lignes": ["LE PETIT KIOSQUE", "En ligne: https://clover.com/p/OX30", "TOTAL $9.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Epicerie au logo illisible : rayons et pesee",
+      "lignes": [
+        "MERCI DE VOTRE VISITE",
+        "VIANDE",
+        "BOEUF HACHE $8.99",
+        "FRUITS/LEGUMES",
+        "BANANE $1.34",
+        "0.625 kg @ $2.14 / kg",
+        "TOTAL $10.33"
+      ],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "epicerie"
+      }
+    },
+    {
+      "nom": "Rayons numerotes d'une caisse Loblaw",
+      "lignes": [
+        "MERCI DE VOTRE VISITE",
+        "21-EPICERIE",
+        "PATES ORZO $1.99",
+        "27-FRUITS ET LEGUMES",
+        "BANANE $1.34",
+        "TOTAL $3.33"
+      ],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "epicerie"
+      }
+    },
+    {
+      "nom": "Pharmacie qui imprime des rayons : l'enseigne prime",
+      "lignes": [
+        "JEAN COUTU",
+        "EPICERIE",
+        "CHIPS $3.49",
+        "PRODUITS LAITIERS",
+        "LAIT 2% $6.49",
+        "TOTAL $9.98"
+      ],
+      "attendu": {
+        "categorie": "sante",
+        "sousCategorie": "medicaments"
+      }
+    },
+    {
+      "nom": "Fromager : une pesee seule ne fait pas une epicerie",
+      "lignes": [
+        "MERCI DE VOTRE VISITE",
+        "BRIE DE MEAUX",
+        "0.285 kg @ $54.90 / kg 15.65",
+        "TOTAL $15.65"
+      ],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Un rayon seul peut etre un libelle",
+      "lignes": ["MERCI DE VOTRE VISITE", "BOULANGERIE", "TOTAL $5.00"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    },
+    {
+      "nom": "Rotisserie a table : l'addition prime sur les rayons",
+      "lignes": [
+        "MERCI DE VOTRE VISITE",
+        "ADDITION #123-1",
+        "TABLE #5",
+        "BOUCHERIE",
+        "VIANDE",
+        "1 POULET $19.00",
+        "TOTAL $21.85",
+        "FACTURE ORIGINALE"
+      ],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Banniere a esperluette ajoutee",
+      "lignes": ["BEN & FLORENTINE STE-FOY", "DEJEUNER $16.00", "TOTAL $18.40"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Casse-croute de l'arena : la cle la plus longue gagne",
+      "lignes": ["CASSE-CROÛTE DE L'ARÉNA", "HOT-DOG $3.50", "TOTAL $4.02"],
+      "attendu": {
+        "categorie": "alimentation",
+        "sousCategorie": "restaurant"
+      }
+    },
+    {
+      "nom": "Cafe du musee : deux groupes, aucune reponse",
+      "lignes": ["CAFÉ DU MUSÉE", "ALLONGE $3.25", "TOTAL $3.74"],
+      "attendu": {
+        "categorie": null,
+        "sousCategorie": null
+      }
+    }
+  ]
+}

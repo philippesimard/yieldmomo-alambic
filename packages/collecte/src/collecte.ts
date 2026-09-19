@@ -99,7 +99,7 @@ export async function collecter(
   const finReconnaisseurs = traceur?.demarrer(SOUS_ETAPE.reconnaisseurs)
   const lignesBlocs = grouperEnLignes(condensat.blocs)
   const marchand = reconnaitreMarchand(lignesBlocs)
-  const nature = reconnaitreCategorie(marchand)
+  const nature = reconnaitreCategorie({ lignes: lignesBlocs, marchand })
   const facture: Facture = {
     marchand,
     date: reconnaitreDate(lignesBlocs),

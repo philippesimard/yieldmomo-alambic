@@ -1,8 +1,10 @@
 import type { SousCategorie } from '@alambic/noyau'
 
-// Les marchands, enseignes et termes qui trahissent la nature d'une depense. Repris du
-// catalogue de YieldMomo (packages/shared/src/dashboard/categories-mots-cles.ts), qui les
-// tient a jour pour sa recherche : les cles sont les memes, ce sont ses CategorieTransaction.
+// Les marchands, enseignes et termes qui trahissent la nature d'une depense. Partie du
+// catalogue de YieldMomo (packages/shared/src/dashboard/categories-mots-cles.ts) : les cles de
+// categorie sont les siennes, ce sont ses CategorieTransaction. Les mots-cles, eux, ont diverge
+// — la table porte plus d'un millier d'enseignes et de termes de recu que la source n'a pas.
+// Elle ne se resynchronise donc pas en ecrasant, seulement en reportant un ajout de la source.
 //
 // Format, herite de la source : tout est deja normalise — minuscules, sans accents, espaces
 // simples. Le reconnaisseur normalise le texte du recu de la meme facon avant de comparer.
@@ -16,8 +18,8 @@ import type { SousCategorie } from '@alambic/noyau'
 // contexte du recu.
 //
 // Les collisions volontaires de la source sont en revanche conservees : « tim hortons » vaut
-// restaurant ET cafe, « costco » vaut epicerie ET essence. C'est au reconnaisseur d'en tirer
-// un refus de trancher, pas a cette table de choisir a sa place.
+// restaurant ET cafe, « indigo » vaut stationnement ET lecture. C'est au reconnaisseur d'en
+// tirer un refus de trancher, pas a cette table de choisir a sa place.
 //
 // Le Record force l'exhaustivite : une sous-categorie ajoutee au noyau casse la compilation
 // ici tant qu'elle n'a pas ses mots-cles, fut-ce une liste vide.
@@ -69,7 +71,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'assurance pret hypothecaire',
     'schl',
     'courtier hypothecaire',
-    'planiprêt',
     'planipret',
     'multi-prets hypotheques',
   ],
@@ -164,6 +165,9 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'renovation',
     'reno-depot',
     'reno depot',
+    'unimat',
+    'botanix',
+    'jardin hamel',
     'rona',
     'home depot',
     'canac',
@@ -398,6 +402,8 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'loblaws',
     'costco',
     'walmart',
+    'mayrand',
+    'tigre geant',
     'adonis',
     'avril',
     'rachelle-bery',
@@ -413,6 +419,7 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'boulangerie',
     'poissonnerie',
     'depanneur',
+    'tabagie',
     'aliments',
     'nourriture',
     'iga extra',
@@ -482,6 +489,11 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'kiosque maraicher',
     'marche fermier',
     'ferme',
+    'fermes',
+    'fraisiere',
+    'framboisiere',
+    'bleuetiere',
+    'chevrerie',
     'cooperative alimentaire',
     'coop alimentaire',
     'epicerie en ligne',
@@ -509,6 +521,13 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'subway',
     'a&w',
     'harveys',
+    'mary browns',
+    'souvlaki',
+    'ben & florentine',
+    'freshii',
+    'tutti frutti',
+    'booster juice',
+    'jugo juice',
     'wendys',
     'burger king',
     'pfk',
@@ -676,6 +695,8 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'boite repas',
     'pret a manger livre',
   ],
+  // Sans « saint-henri » : un quartier et une rue avant d'etre une brulerie, et les succursales
+  // s'impriment au nom de leur quartier (« IGA SAINT-HENRI »). « cafe » suffit a la brulerie.
   cafe: [
     'cafe',
     'starbucks',
@@ -697,8 +718,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'pikolo',
     'crew collective',
     'myriade',
-    'saint-henri',
-    'st-henri',
     'olimpico',
     'cafe olimpico',
     'tommy',
@@ -809,6 +828,9 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'roulotte',
     'bateau',
   ],
+  // Sans « libre service » : c'est le nom que les caisses libre-service donnent au caissier
+  // (« Servi par: Libre Service 22 » chez IGA). « esso marche express » l'emporte sur
+  // « marche express » (epicerie) parce qu'il est plus long : c'est une station-service.
   essence: [
     'essence',
     'petro-canada',
@@ -816,6 +838,7 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'petro-t',
     'petro t',
     'esso',
+    'esso marche express',
     'shell',
     'ultramar',
     'couche-tard',
@@ -848,7 +871,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'shell select',
     'depanneur essence',
     'libre-service essence',
-    'libre service',
     'carte carburant',
     'poste d essence',
     'gaz bar',
@@ -1061,7 +1083,8 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'drug mart',
     'pharmacy',
   ],
-  // Sans « urgence », qui s'imprime sur des recus n'ayant rien de medical.
+  // Sans « urgence », qui s'imprime sur des recus n'ayant rien de medical, ni « sans
+  // rendez-vous », que la coiffure imprime autant que la clinique.
   'soins-medicaux': [
     'soins medicaux',
     'clinique',
@@ -1096,7 +1119,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'sage-femme',
     'sage femme',
     'clinique medicale',
-    'sans rendez-vous',
     'hopital',
     'chsld',
     'clinique privee',
@@ -1157,6 +1179,7 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'dental',
     'dentiste familial',
   ],
+  // Sans « saint-sauveur » : une ville avant d'etre une station de ski.
   sport: [
     'sport et gym',
     'gym',
@@ -1201,7 +1224,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'taekwondo',
     'gymnastique',
     'arena',
-    'aréna',
     'centre aquatique',
     'piscine municipale',
     'club de course',
@@ -1209,7 +1231,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'tournoi',
     'mont tremblant',
     'bromont',
-    'saint-sauveur',
     'sommet',
     'stoneham',
     'le massif',
@@ -1235,10 +1256,12 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
   ],
 
   // personnel
+  // Sans « mode », imprime dans « Mode de paiement » sur la plupart des recus — « mode choc »
+  // nomme l'enseigne sans ce defaut. Sans « la baie » : l'enseigne a ferme en 2025, et le nom
+  // reste celui d'une ville. Sans « boutique » : on en tient de meubles, de cadeaux, de velos.
   vetements: [
     'vetements',
     'simons',
-    'la baie',
     'winners',
     'h&m',
     'zara',
@@ -1263,7 +1286,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'bottes',
     'manteau',
     'linge',
-    'boutique',
     'friperie',
     'village des valeurs',
     'moores',
@@ -1306,7 +1328,7 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'psyche',
     'boutique de vetements',
     'pret a porter',
-    'mode',
+    'mode choc',
     'vetements pour enfants',
     'carters',
     'childrens place',
@@ -1502,6 +1524,7 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'gaming',
     'esport',
   ],
+  // Sans « soiree » : « Merci et bonne soiree! » s'imprime sur des recus de toute sorte.
   sorties: [
     'sorties et spectacles',
     'cinema',
@@ -1575,7 +1598,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'boite a chanson',
     'discotheque',
     'club de nuit',
-    'soiree',
     'billetterie',
     'lepointdevente',
     'tickets',
@@ -1782,7 +1804,8 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'pet',
     'vet clinic',
   ],
-  // Sans « emballage » : des frais d'emballage ne font pas un cadeau.
+  // Sans « emballage » : des frais d'emballage ne font pas un cadeau. Sans « faire-part »,
+  // article de papeterie autant que cadeau.
   'cadeaux-offerts': [
     'cadeaux offerts',
     'carte-cadeau',
@@ -1806,11 +1829,11 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'gravure',
     'personnalisation',
     'shower',
-    'faire-part',
     'liste de mariage',
     'gift',
     'gift card',
   ],
+  // Sans « sainte-justine » seul : un nom de rue et d'hopital, pas un don.
   dons: [
     'dons de charite',
     'centraide',
@@ -1830,7 +1853,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'banque alimentaire',
     'societe canadienne du cancer',
     'fondation du cancer',
-    'sainte-justine',
     'chu sainte-justine',
     'shriners',
     'armee du salut',
@@ -1855,6 +1877,8 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
   ],
 
   // education
+  // Sans « edouard-montpetit » ni « lionel-groulx » seuls : des rues et des stations de metro
+  // avant d'etre des colleges, que « cegep » et « college » nomment deja.
   scolarite: [
     'scolarite',
     'universite',
@@ -1894,8 +1918,6 @@ export const MOTS_CLES: Record<SousCategorie, readonly string[]> = {
     'college de maisonneuve',
     'college rosemont',
     'college montmorency',
-    'edouard-montpetit',
-    'lionel-groulx',
     'cegep garneau',
     'cegep limoilou',
     'cegep sainte-foy',

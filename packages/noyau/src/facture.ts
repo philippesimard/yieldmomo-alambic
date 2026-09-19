@@ -112,11 +112,56 @@ export const SOUS_CATEGORIES = {
 
 export type SousCategorie = keyof typeof SOUS_CATEGORIES
 
-// Sur : les cles de SOUS_CATEGORIES sont exactement les SousCategorie, et la table en compte au
-// moins une. z.enum ne peut pas lire les cles d'un objet, seulement ses valeurs.
-export const SousCategorieSchema = z.enum(
-  Object.keys(SOUS_CATEGORIES) as [SousCategorie, ...SousCategorie[]],
-)
+// Chaque sous-categorie nommee par elle-meme, pour qu'un reconnaisseur ecrive
+// `SOUS_CATEGORIE.restaurant` et non le litteral : une cle renommee casse alors la compilation
+// au lieu de ne plus rien reconnaitre. Le type exige toutes les cles, et chacune egale a son nom.
+export const SOUS_CATEGORIE = {
+  loyer: 'loyer',
+  hypotheque: 'hypotheque',
+  'assurance-habitation': 'assurance-habitation',
+  electricite: 'electricite',
+  chauffage: 'chauffage',
+  'entretien-maison': 'entretien-maison',
+  'meubles-deco': 'meubles-deco',
+  internet: 'internet',
+  cellulaire: 'cellulaire',
+  epicerie: 'epicerie',
+  restaurant: 'restaurant',
+  'livraison-repas': 'livraison-repas',
+  cafe: 'cafe',
+  alcool: 'alcool',
+  vehicule: 'vehicule',
+  essence: 'essence',
+  'assurance-auto': 'assurance-auto',
+  'entretien-vehicule': 'entretien-vehicule',
+  stationnement: 'stationnement',
+  'transport-commun': 'transport-commun',
+  taxi: 'taxi',
+  medicaments: 'medicaments',
+  'soins-medicaux': 'soins-medicaux',
+  dentiste: 'dentiste',
+  sport: 'sport',
+  vetements: 'vetements',
+  'soins-personnels': 'soins-personnels',
+  streaming: 'streaming',
+  'jeux-video': 'jeux-video',
+  sorties: 'sorties',
+  lecture: 'lecture',
+  voyages: 'voyages',
+  'garde-enfants': 'garde-enfants',
+  animaux: 'animaux',
+  'cadeaux-offerts': 'cadeaux-offerts',
+  dons: 'dons',
+  scolarite: 'scolarite',
+  formation: 'formation',
+  epargne: 'epargne',
+  'remboursement-dette': 'remboursement-dette',
+  'frais-bancaires': 'frais-bancaires',
+  impots: 'impots',
+  'autre-depense': 'autre-depense',
+} as const satisfies { [Cle in SousCategorie]: Cle }
+
+export const SousCategorieSchema = z.enum(SOUS_CATEGORIE)
 
 // Une ligne porte sa confiance en bloc plutot que champ par champ : le moteur la lit d'un
 // seul tenant, et une confiance par cellule serait une precision qu'aucun ocr ne fournit.

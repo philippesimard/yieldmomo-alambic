@@ -94,7 +94,8 @@ que l'appelant sache quoi faire confirmer à l'utilisateur. `carte` est le rése
 paiement, normalisé (`visa`, `mastercard`, `amex`, `interac`, `autre`) — `null` si comptant ou
 illisible.
 
-`categorie` et `sousCategorie` disent la nature de la dépense, déduite de l'enseigne. Les clés
+`categorie` et `sousCategorie` disent la nature de la dépense, déduite de l'enseigne et de la
+forme du reçu (une addition de restaurant porte des mentions que la loi impose). Les clés
 sont celles du catalogue de YieldMomo : `categorie` est un groupe (`alimentation`, `transport`…),
 `sousCategorie` une de ses catégories (`epicerie`, `essence`…). Une sous-catégorie implique
 toujours sa catégorie ; l'inverse est faux, et c'est voulu.

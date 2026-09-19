@@ -10,8 +10,21 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Facture } from '@alambic/noyau'
+import {
+  type Attendu,
+  bilan,
+  CHAMPS_CATEGORIE,
+  confusions,
+  EN_TETE_BILAN,
+  lireVerite,
+  type Note,
+  noterMarchand,
+  noterTexte,
+  texte,
+  VERDICT,
+  type Verdict,
+} from './notation'
 
-const FICHIER_VERITE = 'verite.json'
 const DOSSIER_SORTIES = 'sorties'
 const SUFFIXE_EXPORT = '--collecte.json'
 
@@ -29,30 +42,6 @@ const CHAMPS_SIMPLES = [
   'sousCategorie',
 ] as const
 
-type Attendu = {
-  marchand: string | null
-  date: string | null
-  devise: string | null
-  sousTotal: number | null
-  total: number | null
-  carte: string | null
-  // Nulles quand l'enseigne ne permet pas de conclure — le verdict `vide` les sort alors du
-  // denominateur, comme pour tout champ que le recu n'imprime pas.
-  categorie: string | null
-  sousCategorie: string | null
-  taxes: number[]
-  articles: number
-}
-
-// Un champ note : juste, faux (une valeur rendue qui n'est pas la bonne) ou manquant (rien
-// rendu alors que le recu l'imprime). La distinction compte : un champ manquant degrade, un
-// champ faux ment.
-const VERDICT = { juste: 'juste', faux: 'faux', manquant: 'manquant', vide: 'vide' } as const
-
-type Verdict = (typeof VERDICT)[keyof typeof VERDICT]
-
-type Note = { verdict: Verdict; lu: string; attendu: string }
-
 const SIGNE: Record<Verdict, string> = {
   [VERDICT.juste]: '✓',
   [VERDICT.faux]: '✗',
@@ -60,15 +49,14 @@ const SIGNE: Record<Verdict, string> = {
   [VERDICT.vide]: '✓',
 }
 
-const DIACRITIQUES = /[̀-ͯ]/g
-
 const dossier = process.argv[2] ?? 'corpus'
 const sorties = join(dossier, DOSSIER_SORTIES)
 
-const verite = JSON.parse(await readFile(join(dossier, FICHIER_VERITE), 'utf8')) as Record<
-  string,
-  Attendu
->
+const verite = await lireVerite(dossier)
+if (verite === null) {
+  process.stdout.write(`Aucune verite terrain dans ${dossier}/ : rien a noter.\n`)
+  process.exit(0)
+}
 
 const exports_ = (await readdir(sorties).catch(() => [])).filter((nom) =>
   nom.endsWith(SUFFIXE_EXPORT),
@@ -87,7 +75,7 @@ for (const fichier of exports_.sort()) {
     image: string
     facture: Facture
   }
-  const attendu = verite[contenu.image]
+  const attendu = verite.get(contenu.image)
   if (attendu === undefined) continue
   notes.set(contenu.image, noter(contenu.facture, attendu))
 }
@@ -110,24 +98,6 @@ function noter(facture: Facture, attendu: Attendu): Map<string, Note> {
   notes.set('taxes', noterTaxes(facture, attendu))
   notes.set('articles', noterArticles(facture, attendu))
   return notes
-}
-
-// Le marchand se juge sur l'enseigne, pas sur la ligne entiere : l'adresse et le numero de
-// succursale collent souvent au nom, et les rendre n'est pas une erreur.
-function noterMarchand(lu: string | null, attendu: string | null): Note {
-  if (attendu === null)
-    return { verdict: lu === null ? VERDICT.vide : VERDICT.faux, lu: texte(lu), attendu: '—' }
-  if (lu === null) return { verdict: VERDICT.manquant, lu: '—', attendu }
-  const verdict = aplatir(lu).includes(aplatir(attendu)) ? VERDICT.juste : VERDICT.faux
-  return { verdict, lu, attendu }
-}
-
-function noterTexte(lu: string | null, attendu: string | null): Note {
-  if (attendu === null) {
-    return { verdict: lu === null ? VERDICT.vide : VERDICT.faux, lu: texte(lu), attendu: '—' }
-  }
-  if (lu === null) return { verdict: VERDICT.manquant, lu: '—', attendu }
-  return { verdict: lu === attendu ? VERDICT.juste : VERDICT.faux, lu, attendu }
 }
 
 function noterMontant(lu: number | null, attendu: number | null): Note {
@@ -178,14 +148,6 @@ function noterArticles(facture: Facture, attendu: Attendu): Note {
   }
 }
 
-function aplatir(valeur: string): string {
-  return valeur.normalize('NFD').replace(DIACRITIQUES, '').toLowerCase().replace(/\s+/g, '')
-}
-
-function texte(valeur: unknown): string {
-  return valeur === null ? '—' : String(valeur)
-}
-
 function afficher(notes: ReadonlyMap<string, ReadonlyMap<string, Note>>) {
   const colonnes = [...CHAMPS_SIMPLES, 'taxes', 'articles']
   const largeurPhoto = Math.max(12, ...[...notes.keys()].map((nom) => nom.length))
@@ -215,23 +177,21 @@ function afficher(notes: ReadonlyMap<string, ReadonlyMap<string, Note>>) {
     }
   }
 
-  process.stdout.write(`\n${'champ'.padEnd(12)} juste  faux  manquant   exactitude\n`)
+  process.stdout.write(`\n${EN_TETE_BILAN}\n`)
   let justesTotal = 0
   let comptablesTotal = 0
   for (const nom of colonnes) {
     const verdicts = [...notes.values()].map((champs) => champs.get(nom)?.verdict)
-    // Un champ que le recu n'imprime pas ne se note pas : le rendre nul est le comportement
-    // attendu, pas une reussite a porter au credit du pipeline.
     const comptables = verdicts.filter((verdict) => verdict !== VERDICT.vide)
-    const justes = comptables.filter((verdict) => verdict === VERDICT.juste).length
-    const faux = comptables.filter((verdict) => verdict === VERDICT.faux).length
-    const manquants = comptables.filter((verdict) => verdict === VERDICT.manquant).length
-    justesTotal += justes
+    justesTotal += comptables.filter((verdict) => verdict === VERDICT.juste).length
     comptablesTotal += comptables.length
-    const part = comptables.length === 0 ? 1 : justes / comptables.length
-    process.stdout.write(
-      `${nom.padEnd(12)} ${String(justes).padStart(5)} ${String(faux).padStart(5)} ${String(manquants).padStart(9)}   ${(part * 100).toFixed(0).padStart(3)} %\n`,
+    process.stdout.write(`${bilan(nom, verdicts)}\n`)
+  }
+  for (const nom of CHAMPS_CATEGORIE) {
+    const lignes = confusions(
+      new Map([...notes].map(([photo, champs]) => [photo, champs.get(nom)])),
     )
+    if (lignes.length > 0) process.stdout.write(`\n${nom} confondu :\n  ${lignes.join('\n  ')}\n`)
   }
   const global = comptablesTotal === 0 ? 1 : justesTotal / comptablesTotal
   process.stdout.write(

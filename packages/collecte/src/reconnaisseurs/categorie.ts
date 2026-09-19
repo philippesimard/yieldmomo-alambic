@@ -1,42 +1,43 @@
-import { type Facture, SOUS_CATEGORIES, type SousCategorie } from '@alambic/noyau'
-import { MOTS_CLES } from './mots-cles-categories'
+import {
+  type BlocTexte,
+  type Facture,
+  SOUS_CATEGORIE,
+  SOUS_CATEGORIES,
+  type SousCategorie,
+} from '@alambic/noyau'
+import { confianceDe, texteDe } from './commun'
+import { siteDe, sousCategoriesDe } from './enseigne'
+import { confianceAddition, confianceRayons } from './structure'
 
-// L'enseigne en tete de ticket est la seule source : elle dit chez qui on a paye, donc ce
-// qu'on est venu acheter. Les libelles d'articles ont ete essayes puis ecartes — ils nomment
-// un produit et non la nature du commerce, et sur le corpus ils n'ajoutaient que des erreurs
-// (« BIERE THE DU LABRADOR » faisait de l'epicerie de l'alcool, « PIZZA GARNIE BACON » en
-// faisait un restaurant).
+// Deux sources. L'enseigne en tete de ticket dit chez qui on a paye, donc ce qu'on est venu
+// acheter. La forme du recu dit parfois ce qu'on y a fait : une addition de restaurant porte des
+// mentions que la loi impose a la restauration, et elle vaut preuve meme quand l'enseigne est
+// inconnue ou nomme autre chose qu'un restaurant. Les rayons d'un ticket d'epicerie, eux, ne
+// servent qu'en dernier recours, quand l'enseigne ne dit rien : une pharmacie ou une grande
+// surface imprime aussi des rayons alimentaires, et c'est la categorie du commerce qu'on rend.
+//
+// Les libelles d'articles ont ete essayes puis ecartes — ils nomment un produit et non la nature
+// du commerce, et sur le corpus ils n'ajoutaient que des erreurs (« BIERE THE DU LABRADOR »
+// faisait de l'epicerie de l'alcool, « PIZZA GARNIE BACON » en faisait un restaurant).
 //
 // Le facteur dit que la categorie est deduite et non lue : le recu n'imprime nulle part
 // « epicerie », c'est nous qui le concluons de l'enseigne.
 const FACTEUR_ENSEIGNE = 0.8
 
-// La plage des signes combinants (U+0300 a U+036F), retires apres decomposition NFD.
-const DIACRITIQUES = /[̀-ͯ]/g
+// Une mention legale lue sur le recu, et non un nom qu'on interprete : plus sure que l'enseigne.
+const FACTEUR_ADDITION = 0.9
 
-// Tout ce qui n'est ni lettre ni chiffre separe deux mots. « TIM HORTONS #1234 » devient donc
-// les mots tim, hortons, 1234 — et le numero de succursale ne colle plus a l'enseigne.
-const SEPARATEURS = /[^\p{L}\p{N}]+/u
+// Moins sure que l'enseigne : des rayons alimentaires s'impriment ailleurs qu'en epicerie.
+const FACTEUR_RAYONS = 0.7
 
-// Index des mots-cles, construit une fois au chargement : le nom d'une enseigne est court, la
-// table ne l'est pas. On interroge des fenetres de mots plutot que de balayer toute la table.
-const INDEX = new Map<string, SousCategorie[]>()
-// Sur : MOTS_CLES est un Record<SousCategorie, readonly string[]>, donc ses cles sont
-// exactement les SousCategorie. Object.entries les elargit en string, c'est tout.
-for (const [sousCategorie, motsCles] of Object.entries(MOTS_CLES) as [
-  SousCategorie,
-  readonly string[],
-][]) {
-  for (const motCle of motsCles) {
-    const existantes = INDEX.get(motCle)
-    if (existantes === undefined) INDEX.set(motCle, [sousCategorie])
-    else existantes.push(sousCategorie)
-  }
-}
-
-// Le plus long mot-cle de la table, en nombre de mots : la plus grande fenetre a essayer.
-// Derive de la table et non fixe a la main, pour qu'un mot-cle plus long reste trouvable.
-const FENETRE_MAXIMUM = Math.max(...[...INDEX.keys()].map((motCle) => motCle.split(' ').length))
+// Les enseignes qui s'effacent devant une addition. Un hotel (voyages) ou un bar (alcool) qui
+// imprime une addition avec numero de table a servi a manger ou a boire sur place : c'est la
+// depense d'un restaurant, pas d'une nuitee ni d'une bouteille. Toute autre enseigne reste en
+// lice face au restaurant, et le desaccord se tranche comme les autres.
+const CEDENT_A_L_ADDITION: ReadonlySet<SousCategorie> = new Set([
+  SOUS_CATEGORIE.voyages,
+  SOUS_CATEGORIE.alcool,
+])
 
 type Trouvaille = {
   categorie: Facture['categorie']
@@ -45,39 +46,66 @@ type Trouvaille = {
 
 const AUCUNE: Trouvaille = { categorie: null, sousCategorie: null }
 
-// Deduit la nature de la depense des mots-cles reconnus dans l'enseigne. Ne tranche jamais une
+type Sources = { lignes: readonly BlocTexte[][]; marchand: Facture['marchand'] }
+
+// Les sous-categories que les sources designent, et la confiance de la source qui les fonde.
+type Candidates = { sousCategories: readonly SousCategorie[]; confiance: number }
+
+const SANS_CANDIDATE: Candidates = { sousCategories: [], confiance: 0 }
+
+// Deduit la nature de la depense de l'enseigne et de la forme du recu. Ne tranche jamais une
 // ambiguite : une categorie fausse coute plus cher au consommateur qu'une categorie absente.
-export function reconnaitreCategorie(marchand: Facture['marchand']): Trouvaille {
-  if (marchand === null) return AUCUNE
-  return (
-    trancher(chercher(decouper(marchand.valeur)), marchand.confiance * FACTEUR_ENSEIGNE) ?? AUCUNE
-  )
+export function reconnaitreCategorie({ lignes, marchand }: Sources): Trouvaille {
+  const candidates = rassembler(lignes, marchand)
+  return trancher(candidates.sousCategories, candidates.confiance) ?? AUCUNE
 }
 
-function decouper(texte: string): string[] {
-  return texte
-    .normalize('NFD')
-    .replace(DIACRITIQUES, '')
-    .toLowerCase()
-    .split(SEPARATEURS)
-    .filter((mot) => mot !== '')
+function rassembler(lignes: readonly BlocTexte[][], marchand: Facture['marchand']): Candidates {
+  const enseigne = lireEnseigne(marchand, lignes)
+  const addition = confianceAddition(lignes)
+  if (addition !== null) return avecAddition(enseigne, addition * FACTEUR_ADDITION)
+  if (enseigne.sousCategories.length > 0) return enseigne
+  return lireRayons(lignes)
 }
 
-// Les sous-categories designees par la plus longue correspondance trouvee. La longueur d'abord
-// parce qu'un mot-cle long est plus specifique qu'un court : « costco essence » l'emporte sur
-// « costco », qui serait ambigu.
-function chercher(mots: readonly string[]): SousCategorie[] {
-  for (let taille = Math.min(FENETRE_MAXIMUM, mots.length); taille >= 1; taille--) {
-    const trouvees = new Set<SousCategorie>()
-    for (let debut = 0; debut + taille <= mots.length; debut++) {
-      for (const sousCategorie of INDEX.get(mots.slice(debut, debut + taille).join(' ')) ?? []) {
-        trouvees.add(sousCategorie)
-      }
-    }
-    if (trouvees.size > 0) return [...trouvees]
+// Le nom du marchand d'abord ; le site web imprime sur le recu quand le nom ne dit rien, parce
+// que la ligne du nom est la plus exposee aux defauts de l'ocr (logo, gros caracteres).
+function lireEnseigne(marchand: Facture['marchand'], lignes: readonly BlocTexte[][]): Candidates {
+  const parNom = marchand === null ? [] : sousCategoriesDe(marchand.valeur)
+  if (marchand !== null && parNom.length > 0) {
+    return { sousCategories: parNom, confiance: marchand.confiance * FACTEUR_ENSEIGNE }
   }
+  return lireSite(lignes)
+}
 
-  return []
+function lireSite(lignes: readonly BlocTexte[][]): Candidates {
+  for (const ligne of lignes) {
+    const site = siteDe(texteDe(ligne))
+    const sousCategories = site === null ? [] : sousCategoriesDe(site)
+    if (sousCategories.length > 0) {
+      return { sousCategories, confiance: confianceDe(ligne) * FACTEUR_ENSEIGNE }
+    }
+  }
+  return SANS_CANDIDATE
+}
+
+function lireRayons(lignes: readonly BlocTexte[][]): Candidates {
+  const confiance = confianceRayons(lignes)
+  if (confiance === null) return SANS_CANDIDATE
+  return { sousCategories: [SOUS_CATEGORIE.epicerie], confiance: confiance * FACTEUR_RAYONS }
+}
+
+// Une addition met le restaurant en lice a cote de ce que dit l'enseigne, une fois retirees les
+// enseignes qui lui cedent. Une enseigne de restaurant la confirme ; une enseigne de cafe la
+// ramene au groupe ; une enseigne d'un autre groupe (une salle de quilles) fait tout refuser.
+function avecAddition(enseigne: Candidates, confiance: number): Candidates {
+  const restantes = enseigne.sousCategories.filter(
+    (sousCategorie) => !CEDENT_A_L_ADDITION.has(sousCategorie),
+  )
+  return {
+    sousCategories: [...new Set([...restantes, SOUS_CATEGORIE.restaurant])],
+    confiance: restantes.length === 0 ? confiance : Math.max(confiance, enseigne.confiance),
+  }
 }
 
 // null quand rien ne permet de conclure, et c'est le cas nominal : la plupart des enseignes ne
@@ -93,7 +121,8 @@ function trancher(sousCategories: readonly SousCategorie[], confiance: number): 
 
   // Plusieurs candidates : on rend le groupe s'il est le meme pour toutes (« tim hortons » est
   // de l'alimentation, sans qu'on sache dire restaurant ou cafe), et rien du tout sinon
-  // (« costco » vaut epicerie ou essence, deux groupes — impossible de choisir sans deviner).
+  // (« indigo » vaut stationnement ou librairie, deux groupes — impossible de choisir sans
+  // deviner).
   const memeGroupe = sousCategories.every(
     (sousCategorie) => SOUS_CATEGORIES[sousCategorie] === categorie.valeur,
   )

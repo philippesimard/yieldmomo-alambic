@@ -21,6 +21,7 @@
     "banc:condensation": "tsx outils/banc-condensation.ts",
     "banc:collecte": "tsx outils/banc-collecte.ts",
     "mesure": "tsx outils/mesure.ts",
+    "rejeu:categorie": "tsx outils/rejeu-categorie.ts",
     "generer-recus": "tsx outils/python.ts outils/recus/engendrer.py",
     "verifier-boites": "tsx outils/python.ts outils/recus/verifier_boites.py",
     "tester-recus": "tsx outils/python.ts -m pytest outils/recus",
