@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 import { CODE_ERREUR } from '@alambic/noyau'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { env } from './config/env'
+import { EVENEMENT } from './journal'
 
 export const ENTETE_CLE = 'x-cle-alambic'
 
@@ -16,7 +17,7 @@ export async function exigerCle(requete: FastifyRequest, reponse: FastifyReply) 
 
   const fournie = requete.headers[ENTETE_CLE]
   if (typeof fournie !== 'string' || !memeSecret(fournie, attendue)) {
-    requete.log.warn({ url: requete.url }, 'Cle refusee')
+    requete.log.warn({ url: requete.url, evenement: EVENEMENT.cleRefusee }, 'Cle refusee')
     return reponse.code(401).send({ code: CODE_ERREUR.cleInvalide, message: 'Cle invalide.' })
   }
 }

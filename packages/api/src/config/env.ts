@@ -67,6 +67,15 @@ const EnvSchema = z
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
+    // Expedition des logs vers une entree GELF (Logs Data Platform d'OVH). Absente, le service
+    // journalise sur stdout et rien d'autre : ne pas pouvoir expedier ses logs n'est pas une
+    // raison de refuser de lire des factures. C'est l'alerte « silence » du flux de donnees qui
+    // rattrape une cle oubliee, et elle couvre aussi le cas ou l'expedition tombe en route.
+    JOURNAL_GELF_HOTE: z.string().optional(),
+    // 12202 : l'entree GELF mutualisee d'OVH, en TCP/TLS. 2202 serait la meme en clair, ou le
+    // jeton d'ecriture voyagerait a decouvert — quiconque l'intercepte ecrit dans le flux.
+    JOURNAL_GELF_PORT: z.coerce.number().int().positive().default(12202),
+    JOURNAL_GELF_JETON: z.string().optional(),
     // Arret volontaire du service. Les sondes l'annoncent et /distiller refuse, mais le process
     // reste debout : c'est ce qui distingue une maintenance d'une panne, et ce qui evite que
     // l'orchestrateur redemarre en boucle un conteneur qu'on a justement mis de cote.
@@ -129,6 +138,18 @@ const EnvSchema = z
         path: ['ALAMBIC_CLE'],
         message:
           'ALAMBIC_CLE est requise hors developpement : sans elle, le service accepte des images de nimporte qui. Generer avec `openssl rand -base64 32`.',
+      })
+    }
+
+    // Partout, et non en production seule : un hote sans jeton se connecte, expedie, et OVH
+    // jette chaque message faute de savoir dans quel flux l'ecrire. La panne est silencieuse
+    // des deux cotes, c'est exactement celle qu'on ne veut pas decouvrir le jour d'un incident.
+    if (valeurs.JOURNAL_GELF_HOTE !== undefined && valeurs.JOURNAL_GELF_JETON === undefined) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['JOURNAL_GELF_JETON'],
+        message:
+          'JOURNAL_GELF_JETON est requise des que JOURNAL_GELF_HOTE est renseignee : sans jeton, OVH ne sait pas dans quel flux ecrire et jette le message. Le copier dans le menu du flux de donnees, « Copier le jeton d ecriture ».',
       })
     }
 

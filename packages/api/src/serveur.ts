@@ -13,7 +13,7 @@ import {
 import { distillerDansAtelier } from './atelier/atelier'
 import { env } from './config/env'
 import { PLAN_PIPELINE } from './distiller'
-import { journal } from './journal'
+import { EVENEMENT, journal } from './journal'
 import { routeDistiller } from './routes/distiller'
 import { routeSante } from './routes/sante'
 
@@ -31,6 +31,10 @@ export async function construireServeur() {
     // deprecie et retirera en 6 — elle avertirait a chaque demarrage, dans les logs memes qu'on
     // cherche a alleger.
     logController: new LogController({ disableRequestLogging: true }),
+    // Sans ca, reqId est un compteur req-N local, remis a zero a chaque redemarrage : une ligne
+    // de log ne se rattache a rien cote appelant. Retombe sur le compteur si l'en-tete manque,
+    // donc inoffensif tant que YieldMomo ne l'envoie pas.
+    requestIdHeader: 'x-request-id',
     // Aucune route n'accepte de corps json : @fastify/multipart enregistre un parser en FLUX,
     // que ce plafond ne traverse jamais (fastify ne l'applique qu'aux parsers qui accumulent).
     // Il ne borne donc que le parser json par defaut — lequel s'execute AVANT les preHandler,
@@ -76,7 +80,7 @@ export async function construireServeur() {
       // seul se tait — c'est aussi le seul dont le message soit construit ailleurs qu'ici.
       const panne = erreur.code === CODE_ERREUR.erreurInterne
       requete.log[panne ? 'error' : 'warn'](
-        { err: erreur, code: erreur.code },
+        { err: erreur, code: erreur.code, evenement: EVENEMENT.refus },
         'Distillation refusee',
       )
       return reponse.code(erreur.statut).send({
@@ -101,7 +105,7 @@ export async function construireServeur() {
     }
 
     const statut = erreur.statusCode ?? 500
-    requete.log.error({ err: erreur }, 'Erreur non geree')
+    requete.log.error({ err: erreur, evenement: EVENEMENT.erreurNonGeree }, 'Erreur non geree')
     return reponse.code(statut).send({
       code: statut >= 500 ? CODE_ERREUR.erreurInterne : CODE_ERREUR.requeteInvalide,
       message: statut >= 500 ? 'Une erreur interne est survenue.' : erreur.message,

@@ -1,7 +1,7 @@
 import { Worker } from 'node:worker_threads'
 import { CODE_ERREUR, type Distillation, ErreurAlambic, type EvenementTrace } from '@alambic/noyau'
 import { env } from '../config/env'
-import { journal } from '../journal'
+import { EVENEMENT, journal } from '../journal'
 import { type DemandeOuvrier, GENRE_MESSAGE, type MessageOuvrier } from './messages'
 
 // Le bootstrap .mjs, et non ouvrier.ts directement : voir l'explication dans ce fichier. tsx
@@ -50,7 +50,10 @@ export function demarrerAtelier(): void {
   arretDemande = false
   morts = []
   ouvriers = Array.from({ length: env.OUVRIERS }, creerOuvrier)
-  journal.info({ ouvriers: ouvriers.length }, 'Atelier demarre')
+  journal.info(
+    { ouvriers: ouvriers.length, evenement: EVENEMENT.atelierDemarre },
+    'Atelier demarre',
+  )
 }
 
 // Le compte sert a la sonde de disponibilite : un Alambic sans ouvrier ne peut rien distiller,
@@ -144,7 +147,10 @@ function affecter(ouvrier: Ouvrier, tache: Promesse & { image: ArrayBuffer }): v
     )
     // Un ouvrier qui depasse le delai est peut-etre bloque dans une boucle : on ne peut pas
     // lui demander d'abandonner, seulement le tuer. Le gestionnaire 'exit' le remplacera.
-    journal.warn({ delaiMs: env.DELAI_DISTILLATION_MS }, 'Ouvrier expire, remplacement')
+    journal.warn(
+      { delaiMs: env.DELAI_DISTILLATION_MS, evenement: EVENEMENT.ouvrierExpire },
+      'Ouvrier expire, remplacement',
+    )
     // Hors du bassin AVANT terminate, qui est asynchrone : tant qu'il y figure avec une tache
     // nulle, il parait libre, et servirAttente lui confierait une tache que le thread mourant ne
     // traiterait jamais — laquelle ressortirait en 500 alors qu'un ouvrier sain l'attendait.
@@ -216,7 +222,7 @@ function retirer(ouvrier: Ouvrier): void {
     morts = [...morts, maintenant].filter((instant) => maintenant - instant < FENETRE_MORTS_MS)
     if (morts.length > MORTS_TOLEREES) {
       journal.error(
-        { morts: morts.length, ouvriers: ouvriers.length },
+        { morts: morts.length, ouvriers: ouvriers.length, evenement: EVENEMENT.atelierEpuise },
         'Trop d ouvriers morts, remplacement abandonne',
       )
       return

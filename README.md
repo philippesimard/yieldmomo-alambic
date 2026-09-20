@@ -191,6 +191,92 @@ forme que les autres :
 { "code": "maintenance", "message": "Le service est en maintenance, reessayez plus tard." }
 ```
 
+## Surveillance
+
+Les logs partent toujours sur la sortie standard. Si `JOURNAL_GELF_HOTE` et `JOURNAL_GELF_JETON`
+sont renseignées, ils partent **aussi** vers
+[Logs Data Platform](https://docs.ovhcloud.com/fr/guides/manage-and-operate/observability/logs-data-platform/)
+d'OVHcloud, en GELF sur TLS (port 12202). Sans ces clés, rien ne change et rien n'échoue : le
+service journalise sur stdout, un point c'est tout. **Ne pas pouvoir expédier ses logs n'est pas
+une raison de refuser de lire des factures** — c'est l'alerte « silence » ci-dessous qui rattrape
+une clé oubliée, et elle couvre aussi le cas où l'expédition tombe en cours de route.
+
+Mettre le flux en place, une fois, dans le manager OVHcloud :
+
+1. Créer le service Logs Data Platform. Facturation à l'usage, **premier gigaoctet gratuit** — au
+   volume d'Alambic (~3 lignes par distillation), on y reste largement.
+2. Relever le cluster dans le panneau *Configuration SSL* (forme `xxx.logs.ovh.com`) →
+   `JOURNAL_GELF_HOTE`.
+3. *Ajouter un flux de données*, nommé `alambic`, live-tail WebSocket activé, rétention 30 jours.
+4. Menu `…` du flux → *Copier le jeton d'écriture* → `JOURNAL_GELF_JETON`.
+
+Un seul flux pour tous les environnements : le champ `environnement` les sépare.
+
+### Ce qui est interrogeable
+
+**Les champs numériques portent le suffixe `_num`.** Logs Data Platform indexe un champ additionnel
+comme du *texte* sauf suffixe de type — sans lui, aucune moyenne ni aucun p95 sur `totalMs` n'est
+possible. Le suffixage se fait au point de sortie, dans
+[`packages/api/src/journal-gelf.ts`](packages/api/src/journal-gelf.ts) : le reste du code ignore
+la convention d'OVH, et stdout reste lisible.
+
+> Dans Graylog, un champ GELF `_foo` s'interroge **sans** le souligné : `evenement:distillation`,
+> `totalMs_num:>15000`.
+
+Chaque ligne porte `service`, `environnement`, `versionService`, `conteneur` et `niveau`. Une
+distillation réussie porte en plus ses mesures (`totalMs_num`, `chauffeMs_num`,
+`condensationMs_num`, `collecteMs_num`, `octets_num`, `qualite_num`, `muets_num`), et un refus
+porte son `code`.
+
+Le champ `evenement` nomme les lignes qui comptent — `short_message` est analysé en texte intégral,
+filtrer dessus serait fragile :
+
+| `evenement` | Quand |
+|---|---|
+| `distillation` | Une facture lue, avec ses mesures |
+| `refus` | Une distillation refusée, avec son `code` |
+| `erreurNonGeree` | Un bug non prévu |
+| `cleRefusee` | Une requête avec une `x-cle-alambic` absente ou fausse |
+| `atelierDemarre` | L'atelier se monte — compter les redémarrages |
+| `ouvrierExpire` | Un ouvrier tué au bout de `DELAI_DISTILLATION_MS` |
+| `atelierEpuise` | **Disjoncteur ouvert** : trop d'ouvriers morts, remplacement abandonné |
+| `sidecarRelance` | Un sidecar python est mort et repart |
+| `sidecarAbandonne` | **Disjoncteur ouvert** : sidecar mort trop souvent, relance abandonnée |
+| `arret` | SIGTERM reçu — corréler un trou avec un déploiement |
+
+### Tableau de bord
+
+Filtre global `environnement:production` :
+
+| Widget | Requête |
+|---|---|
+| Distillations par heure | count, `evenement:distillation` |
+| Latence | `evenement:distillation` → moyenne et p95 de `totalMs_num` |
+| Où part le temps | moyennes empilées de `chauffeMs_num`, `condensationMs_num`, `collecteMs_num` |
+| Motifs de refus | `evenement:refus` → terms sur `code` |
+| Pannes | count, `niveau:error` |
+| Qualité de lecture | moyennes de `qualite_num` et `muets_num` — dérive du modèle OCR |
+| Santé du pipeline | count, `evenement:(sidecarRelance OR ouvrierExpire OR atelierDemarre)` |
+
+### Alertes
+
+Menu `…` du flux → *Manage alerts*. Par ordre d'importance :
+
+| Type | Condition | Ce que ça veut dire |
+|---|---|---|
+| Comptage | **total < 1 sur 15 min** | **Le service est mort, ou n'expédie plus.** La plus importante du lot, et la seule qui voie une configuration oubliée |
+| Comptage | `niveau:error` > 3 sur 10 min | Panne réelle — seul `erreur_interne` sort en `error` |
+| Comptage | `code:surcharge` > 10 sur 5 min | Contre-pression saturée : monter `OUVRIERS`, ou le serveur |
+| Agrégation | moyenne `totalMs_num` > 15 000 sur 15 min | La latence dérive avant que les 504 n'arrivent |
+| Contenu | `evenement` = `atelierEpuise` | Disjoncteur atelier ouvert |
+| Contenu | `evenement` = `sidecarAbandonne` | PaddleOCR ou LiLT abandonné |
+| Comptage | `code:moteur_indisponible` > 0 sur 5 min | Un sidecar ne répond plus |
+| Comptage | `evenement:cleRefusee` > 5 sur 5 min | Quelqu'un tente sa chance sur `x-cle-alambic` |
+
+**Un `SIGKILL` (OOM) perd la file en attente.** L'arrêt gracieux, lui, la vide avant de sortir.
+C'est le prix d'expédier depuis le service plutôt que depuis un collecteur ; l'alerte « silence »
+reste le filet.
+
 ## Erreurs
 
 Toutes les réponses d'erreur ont la même forme : `{ "code": "...", "message": "..." }`. Le `code`
@@ -313,22 +399,44 @@ est **refusé** si `MODELE_COLLECTE` n'est pas renseignée.
 | General | Dockerfile Path | `Dockerfile` |
 | General | Docker Context Path | `.` |
 | Domains | Container Port | `3100` |
-| Environment | Build Time Arguments | `MODELE_URL` (URL présignée, sept jours) |
-| Environment | Environment Variables | le contenu de [.env.production.exemple](.env.production.exemple) |
+| Environment | Environment Settings | la zone 1 de [.env.production.exemple](.env.production.exemple) |
+| Environment | Build-time Arguments | la zone 2 : `MODELE_URL` (URL présignée, sept jours) |
 
 Aucune clé S3 n'entre dans le build : `publier-modele` rend une **URL présignée**, valable sept
-jours, et c'est elle seule que Dokploy transmet. Un secret de build serait plus étanche encore,
-mais son montage dépend de la plateforme — et une clé passée en argument resterait lisible dans le
-`docker history` de l'image produite, ce qu'une URL expirée ne risque pas.
+jours, et c'est elle seule que Dokploy transmet. Une clé S3 passée en argument resterait lisible
+dans le `docker history` de l'image produite ; une URL déjà expirée, elle, ne vaut rien.
 
 Passé les sept jours, l'image ne se reconstruit plus (curl renvoie 403). Represigner sans rien
 téléverser : `npm run publier-modele -- --bucket <bucket> --nom <objet.tar.gz> --url-seulement`
+
+`JOURNAL_GELF_HOTE` et `JOURNAL_GELF_JETON` : l'expédition des logs vers OVHcloud — voir
+[Surveillance](#surveillance). Laissées vides, les logs ne quittent pas le conteneur.
 
 `SAUTS_PROXY=1` : Traefik est le seul saut devant le service, et c'est lui qui pose le vrai
 `X-Forwarded-For`. Sans ça, la limitation de débit compterait tout le trafic sur l'IP du proxy.
 
 Le service n'est jamais joint par un navigateur : seule l'API de YieldMomo l'appelle, avec le
 secret partagé `ALAMBIC_CLE` dans l'en-tête `x-cle-alambic`.
+
+### Dimensionnement
+
+Trois valeurs du gabarit de production sont le résultat de mesures, et non des défauts. Le
+gabarit les donne sans les justifier — voici pourquoi elles valent ce qu'elles valent.
+
+`OUVRIERS=2`, et non le défaut (un de moins que de cœurs) : le sidecar OCR sert une seule
+instance sous verrou, et l'OCR pèse plus de 95 % d'une distillation. Au-delà de deux ouvriers, le
+troisième attend derrière les autres et finit en 504 — ce sont des délais qu'on ajoute, pas du
+débit. **Ne remonter que si le `condensationMs` maximum des logs reste bien sous 10 s** — le
+tableau de bord de [Surveillance](#surveillance) le donne directement.
+
+`DETECTION_OCR=mobile`, et non `server` : mesuré sur le corpus, `server` coûte 4 à 6× la latence
+de `mobile` (16 s la photo simple, 83 s la plus dense) et dépasse `DELAI_OCR_MS`. Le garder
+demanderait de pousser `DELAI_DISTILLATION_MS` au-delà de 85 s.
+
+`TAILLE_MAX_IMAGE=15728640` (15 Mo), plus large que la limite de photo de profil de YieldMomo
+(10 Mo) : une photo prise au grand-angle d'un iPhone récent dépasse régulièrement les 10 Mo, et
+couper la requête à la réception rendrait le service inutilisable sur exactement les appareils
+qu'on vise.
 
 ## Conventions
 

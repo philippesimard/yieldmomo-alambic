@@ -4,6 +4,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { distillerDansAtelier, refusAtelier } from '../atelier/atelier'
 import { exigerCle } from '../cle'
 import { env } from '../config/env'
+import { EVENEMENT } from '../journal'
 
 // Toutes les issues de la route, declarees une fois. Fastify serialise selon le statut, et un
 // statut absent de cette table sortirait en json non contraint.
@@ -119,7 +120,7 @@ export const routeDistiller: FastifyPluginAsyncZod = async (app) => {
       // Les mesures vont dans les logs et non dans la reponse : elles servent a surveiller le
       // service, et une etape qui derape doit se voir avant que les temps de reponse ne
       // bougent. Le consommateur, lui, n'en fait rien.
-      requete.log.info(mesures, 'Distillation')
+      requete.log.info({ ...mesures, evenement: EVENEMENT.distillation }, 'Distillation')
 
       return reponse.send(facture)
     },

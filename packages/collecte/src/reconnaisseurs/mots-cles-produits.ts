@@ -5873,8 +5873,6 @@ export const MOTS_CLES_PRODUITS: Record<SousCategorie, readonly string[]> = {
     'service d impression grand format',
     'location de costume evenementiel',
     'service de couture retouche',
-  ],
-}
     'frais de port express',
     'frais de manutention colis',
     'ecofrais electronique',
@@ -5888,4 +5886,6 @@ export const MOTS_CLES_PRODUITS: Record<SousCategorie, readonly string[]> = {
     'photocopie couleur',
     'plastification document',
     'cle taillee double',
-    'pile bouton lithium',],
+    'pile bouton lithium',
+  ],
+}

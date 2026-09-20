@@ -1,5 +1,6 @@
 import { arreterAtelier, demarrerAtelier } from './atelier/atelier'
 import { env } from './config/env'
+import { EVENEMENT, viderJournal } from './journal'
 import { construireServeur } from './serveur'
 import { arreterSidecarCollecte, demarrerSidecarCollecte } from './sidecars/collecte'
 import { arreterSidecarOcr, demarrerSidecarOcr } from './sidecars/ocr'
@@ -29,7 +30,7 @@ app.listen({ host: env.HOST, port: env.PORT }).catch((erreur) => {
 // lieu de les couper net.
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
-    app.log.info({ signal }, 'Arret demande, fermeture du serveur')
+    app.log.info({ signal, evenement: EVENEMENT.arret }, 'Arret demande, fermeture du serveur')
     // unref : cette minuterie ne doit pas maintenir le process en vie si tout se ferme vite.
     setTimeout(() => {
       app.log.error('Arret trop long, sortie forcee')
@@ -42,6 +43,9 @@ for (const signal of ['SIGTERM', 'SIGINT'] as const) {
       .close()
       .then(() => arreterAtelier())
       .then(() => Promise.all([arreterSidecarOcr(), arreterSidecarCollecte()]))
+      // En dernier : tout ce qui precede journalise encore, et la file du flux GELF partirait
+      // sinon avec le process.
+      .then(() => viderJournal())
       .then(
         () => process.exit(0),
         (erreur) => {

@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process'
-import { journal } from '../journal'
+import { EVENEMENT, journal } from '../journal'
 
 // Meme philosophie que MORTS_TOLEREES dans l'atelier : un sidecar qui meurt en boucle est un
 // sidecar qui ne demarrera jamais (python absent, modele introuvable, memoire epuisee). Le
@@ -153,13 +153,16 @@ export function creerSuperviseur(options: OptionsSuperviseur): Superviseur {
     )
     if (demarrages.length > DEMARRAGES_TOLERES) {
       journalSidecar.error(
-        { demarrages: demarrages.length },
+        { demarrages: demarrages.length, evenement: EVENEMENT.sidecarAbandonne },
         'Sidecar mort trop souvent, relance abandonnee',
       )
       return
     }
 
-    journalSidecar.warn({ code, relanceMs: attenteRelanceMs }, 'Sidecar arrete, relance')
+    journalSidecar.warn(
+      { code, relanceMs: attenteRelanceMs, evenement: EVENEMENT.sidecarRelance },
+      'Sidecar arrete, relance',
+    )
     relance = setTimeout(() => {
       relance = null
       lancer()
