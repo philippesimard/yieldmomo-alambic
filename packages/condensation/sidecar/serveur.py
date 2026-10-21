@@ -50,9 +50,11 @@ relecture = True
 verrou = threading.Lock()
 
 
-def construire_pipeline(detection):
+def construire_pipeline(detection, fils):
     from paddleocr import PaddleOCR
 
+    # Sans --fils, le defaut de paddleocr (10 threads, quel que soit le nombre de coeurs).
+    options = {} if fils is None else {'cpu_threads': fils}
     return PaddleOCR(
         text_detection_model_name=DETECTION[detection],
         text_recognition_model_name=RECONNAISSANCE,
@@ -63,6 +65,7 @@ def construire_pipeline(detection):
         use_textline_orientation=False,
         text_det_limit_side_len=LIMITE_DETECTION,
         text_det_limit_type='max',
+        **options,
     )
 
 
@@ -206,13 +209,14 @@ def principal():
     # Pour mesurer ce que la seconde lecture apporte et ce qu'elle coute, au banc. En service
     # elle est toujours active : c'est un montant faux en moins.
     parseur.add_argument('--sans-relecture', action='store_true')
+    parseur.add_argument('--fils', type=int)
     arguments = parseur.parse_args()
 
     # Paddle est bavard au chargement ; seuls les avertissements et erreurs meritent stderr.
     logging.disable(logging.INFO)
 
     global pipeline, relecture
-    pipeline = construire_pipeline(arguments.detection)
+    pipeline = construire_pipeline(arguments.detection, arguments.fils)
     relecture = not arguments.sans_relecture
 
     if arguments.preparer:

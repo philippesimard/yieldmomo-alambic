@@ -1,0 +1,2061 @@
+{
+  "checkpoints": [
+    "lilt-alambic"
+  ],
+  "photos": 199,
+  "facturesJustes": 55,
+  "champs": {
+    "marchand": {
+      "juste": 157,
+      "faux": 30,
+      "manquant": 12,
+      "vide": 0
+    },
+    "date": {
+      "juste": 180,
+      "faux": 0,
+      "manquant": 19,
+      "vide": 0
+    },
+    "devise": {
+      "juste": 78,
+      "faux": 0,
+      "manquant": 121,
+      "vide": 0
+    },
+    "sousTotal": {
+      "juste": 147,
+      "faux": 24,
+      "manquant": 28,
+      "vide": 0
+    },
+    "total": {
+      "juste": 162,
+      "faux": 6,
+      "manquant": 31,
+      "vide": 0
+    },
+    "carte": {
+      "juste": 142,
+      "faux": 11,
+      "manquant": 16,
+      "vide": 30
+    },
+    "categorie": {
+      "juste": 0,
+      "faux": 0,
+      "manquant": 0,
+      "vide": 0
+    },
+    "sousCategorie": {
+      "juste": 0,
+      "faux": 0,
+      "manquant": 0,
+      "vide": 0
+    },
+    "taxes": {
+      "juste": 142,
+      "faux": 40,
+      "manquant": 17,
+      "vide": 0
+    },
+    "articles": {
+      "juste": 154,
+      "faux": 29,
+      "manquant": 16,
+      "vide": 0
+    }
+  },
+  "verdicts": {
+    "000000.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000001.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000002.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000003.jpg": {
+      "marchand": "juste",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "faux",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "000004.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000005.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000006.jpg": {
+      "marchand": "manquant",
+      "date": "manquant",
+      "devise": "juste",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "faux"
+    },
+    "000007.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000008.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000009.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000010.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000011.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000012.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "manquant",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000013.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000014.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000015.jpg": {
+      "marchand": "juste",
+      "date": "manquant",
+      "devise": "juste",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "faux",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000016.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000017.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000018.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000019.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000020.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000021.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000022.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000023.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000024.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "faux",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000025.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000026.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000027.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000028.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "manquant"
+    },
+    "000029.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000030.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000031.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000032.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "faux"
+    },
+    "000033.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "faux",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000034.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000035.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000036.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000037.jpg": {
+      "marchand": "manquant",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "faux",
+      "taxes": "faux",
+      "articles": "manquant"
+    },
+    "000038.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000039.jpg": {
+      "marchand": "manquant",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000040.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000041.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000042.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000043.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000044.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "000045.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000046.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000047.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000048.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000049.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000050.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000051.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000052.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000053.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000054.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000055.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000056.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000057.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000058.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000059.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000060.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "faux",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000061.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000062.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000063.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000064.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000065.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000066.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000067.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000068.jpg": {
+      "marchand": "manquant",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "vide",
+      "taxes": "manquant",
+      "articles": "faux"
+    },
+    "000070.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000071.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000072.jpg": {
+      "marchand": "manquant",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000073.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000074.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000075.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "faux",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000076.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000077.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000078.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000079.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000080.jpg": {
+      "marchand": "manquant",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "faux",
+      "taxes": "faux",
+      "articles": "manquant"
+    },
+    "000081.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000082.jpg": {
+      "marchand": "manquant",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "vide",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000083.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "juste"
+    },
+    "000084.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000085.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "faux",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000086.jpg": {
+      "marchand": "manquant",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000087.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000088.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000089.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000090.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000091.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000092.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000093.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "faux",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000094.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000095.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000096.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000097.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "manquant",
+      "carte": "vide",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000098.jpg": {
+      "marchand": "manquant",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000099.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000100.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000101.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000102.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000103.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000104.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000105.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "faux",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000106.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000107.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000108.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000109.jpg": {
+      "marchand": "manquant",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "faux"
+    },
+    "000110.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000111.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000112.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000113.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000114.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000115.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000116.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000117.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000118.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000119.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000120.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "faux",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000121.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000122.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000123.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000124.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000125.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000126.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000127.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000128.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000129.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000130.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000131.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000132.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "faux",
+      "articles": "manquant"
+    },
+    "000133.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000134.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000135.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000136.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000137.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000138.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000139.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000140.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000141.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000142.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000143.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "faux",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000144.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000145.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000146.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000147.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000148.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "vide",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000149.jpg": {
+      "marchand": "manquant",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "manquant"
+    },
+    "000150.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000151.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000152.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000153.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000154.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000155.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000156.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000157.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "manquant",
+      "articles": "juste"
+    },
+    "000158.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "vide",
+      "taxes": "manquant",
+      "articles": "juste"
+    },
+    "000159.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000160.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000161.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "manquant",
+      "total": "faux",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000162.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000163.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "faux",
+      "carte": "juste",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000164.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000165.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "manquant",
+      "taxes": "faux",
+      "articles": "manquant"
+    },
+    "000166.jpg": {
+      "marchand": "manquant",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "manquant",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "000167.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000168.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000169.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000170.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000171.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000172.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000173.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000174.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000175.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "manquant",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000176.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000177.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000178.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "000179.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000180.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000181.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000182.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000183.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "000184.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000185.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "faux",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000186.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "manquant",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000187.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000188.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000189.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000190.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000191.jpg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000192.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000193.jpg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "manquant",
+      "sousTotal": "manquant",
+      "total": "manquant",
+      "carte": "manquant",
+      "taxes": "manquant",
+      "articles": "manquant"
+    },
+    "000194.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "faux",
+      "carte": "faux",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "000195.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000196.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000197.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000198.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "000199.jpg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "manquant",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    }
+  }
+}

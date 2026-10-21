@@ -1,10 +1,11 @@
 # @alambic/collecte — étape 3
 
 **Interprète le texte lu en facture exploitable.** Entrée : un `Condensat` et l'`ImageChauffee`
-qui l'a produit. Sortie : une `Facture`.
+qui l'a produit. Sortie : une `Recolte`, c'est-à-dire la `Facture` et ce que la Collecte pense de
+la cohérence de ses montants.
 
 ```ts
-const facture = await collecter(condensat, image, moteur)
+const { facture, coherence } = await collecter(condensat, image, moteur)
 ```
 
 C'est l'étape qui donne du sens : reconnaître qu'un « 8,91 » à droite d'un « TOTAL » est le
@@ -81,11 +82,14 @@ Le zero-shot étant bruyant, la reconstruction ne croit pas le modèle aveuglém
 - **Le total, champ le plus important, a trois filets** : l'étiquette du modèle, sinon la
   dernière ligne à marqueur (« TOTAL 26,43 », puis « MONTANT $17.00 » des reçus de terminal),
   sinon un montant payé par carte ou comptant. Quand l'entité porte le mot « TOTAL » mais pas
-  le chiffre, le montant se lit sur sa ligne.
+  le chiffre, le montant se lit sur sa ligne. Ces filets ne choisissent plus seuls : ils
+  ordonnent les candidats que le solveur départage (voir plus bas).
 - **Les taxes se lisent à deux sources** : les entités étiquetées, plus les lignes au lexique
   (TPS, TVQ, GST…) que le modèle a manquées.
 - **Un montant exige sa partie décimale** (`montantDe`) : c'est ce qui écarte téléphones,
-  heures et numéros de carte des montants.
+  heures et numéros de carte des montants. Les milliers peuvent être séparés par une espace,
+  une virgule ou un point (« 1 234,56 », « 1,234.56 », « 1.234,56 ») : le dernier séparateur
+  porte toujours les cents.
 - **Les étiquettes sous un score plancher sont ramenées à `O`**, et les lignes de règlement
   (total, paiement, carte) ne fondent jamais un article.
 
@@ -94,6 +98,32 @@ qu'elle est déduite, pas lue.
 
 Les confiances croisent les deux sources : score softmax du modèle × confiance OCR du maillon
 faible. Une étiquette sûre posée sur un texte mal lu reste douteuse.
+
+## Le solveur de cohérence
+
+Un reçu québécois est un petit système d'équations : sous-total + taxes = total, TPS = 5 % et
+TVQ = 9,975 % de la même assiette. `coherence.ts` s'en sert pour choisir, parmi les montants
+**lus**, la combinaison qui se tient. Il ne fabrique jamais un montant.
+
+- **Les candidats** : chaque champ propose les siens, du plus sûr au moins sûr (les filets
+  ci-dessus). À preuves égales, c'est l'ordre d'avant le solveur qui gagne.
+- **Les preuves** : le bilan qui se ferme à ±0,02 $ en vaut deux ; le rapport TVQ/TPS de 1,995
+  et une taxe égale à son taux × le sous-total (tout est taxable) en valent une chacun.
+- **L'impossible** : une taxe imprimée sous le total (un pourboire ou un paiement que le modèle
+  étiquette taxe), égale ou supérieure au total (le montant payé), ou supérieure à 15 % du
+  sous-total, est écartée. Le sous-total ne partage jamais la ligne du total. Sur 200 reçus
+  synthétiques, la règle des 15 % retire 18 fausses taxes pour 2 vraies perdues quand le
+  sous-total lu est faux.
+- **Ce qu'il ne fait pas** : retirer une vraie taxe pour fermer le bilan. Certains reçus
+  impriment un « sous-total » qui répète le total, taxes comprises ; les retirer fermerait le
+  bilan à tort.
+
+La `coherence` rendue vaut `coherente` (le bilan se ferme), `incoherente` (il se vérifie et ne
+se ferme pas : un montant est faux, ou des frais ou un pourboire n'ont pas été lus) ou
+`indeterminee` (il manque le total ou le sous-total). Un bilan qui se ferme divise par deux le
+doute de chaque montant qu'il engage ; un bilan qui ne se ferme pas baisse leur confiance de
+20 %. La cohérence ne sort pas dans la facture : elle part dans les mesures journalisées, où sa
+part dit si la lecture se dégrade, sans aucune vérité terrain.
 
 ## La catégorie
 

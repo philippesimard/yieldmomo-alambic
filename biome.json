@@ -11,8 +11,10 @@
       "!**/node_modules",
       "!**/*.md",
       "!**/.venv",
+      "!corpus",
       "!outils/jeu",
       "!outils/apercu",
+      "!outils/references",
       "!outils/entrainement/modeles"
     ]
   },

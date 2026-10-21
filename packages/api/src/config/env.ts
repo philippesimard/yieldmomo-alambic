@@ -103,6 +103,10 @@ const EnvSchema = z
     DELAI_OCR_MS: z.coerce.number().int().positive().default(20_000),
     CHEMIN_PYTHON_OCR: z.string().default(CHEMIN_PYTHON_PAR_DEFAUT),
     DETECTION_OCR: z.enum(DETECTION_OCR).default(DETECTION_OCR.mobile),
+    // Threads de calcul du sidecar ocr. Paddle en prend 10 par defaut, plus que les 6 coeurs
+    // du VPS : il se marche dessus avant meme que la collecte tourne a cote. Le partage des
+    // coeurs entre les deux sidecars se decide a la mesure, sur la ligne « Distillation ».
+    FILS_OCR: z.coerce.number().int().positive().default(availableParallelism()),
     // Optionnelle en developpement (defaut factice, applique plus bas) pour qu'un clone frais
     // demarre sans python ; exigee en production, ou un service tournant en silence au moteur
     // factice rendrait des factures inventees.
@@ -111,6 +115,9 @@ const EnvSchema = z
     PORT_SIDECAR_COLLECTE: z.coerce.number().int().positive().default(3103),
     DELAI_COLLECTE_MS: z.coerce.number().int().positive().default(6_000),
     CHEMIN_PYTHON_COLLECTE: z.string().default(CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT),
+    // Threads de calcul du sidecar d'etiquetage. Absente : le defaut de torch, un par coeur
+    // physique.
+    FILS_COLLECTE: z.coerce.number().int().positive().optional(),
     // Optionnelle en developpement (defaut public, applique plus bas) ; exigee en production,
     // ou le checkpoint public rendrait des factures moins bien lues sans que rien ne le dise.
     MODELE_COLLECTE: z.string().optional(),

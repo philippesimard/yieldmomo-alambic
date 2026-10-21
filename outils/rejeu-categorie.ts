@@ -89,12 +89,18 @@ async function noterCorpus(): Promise<boolean> {
     if (photo === undefined || attendu === undefined) continue
 
     const lecture = lire((await readFile(join(sorties, fichier), 'utf8')).split('\n'))
-    notes.marchand.set(photo, noterMarchand(lecture.marchand?.valeur ?? null, attendu.marchand))
-    notes.categorie.set(photo, noterTexte(lecture.categorie?.valeur ?? null, attendu.categorie))
-    notes.sousCategorie.set(
-      photo,
-      noterTexte(lecture.sousCategorie?.valeur ?? null, attendu.sousCategorie),
-    )
+    if (attendu.marchand !== undefined) {
+      notes.marchand.set(photo, noterMarchand(lecture.marchand?.valeur ?? null, attendu.marchand))
+    }
+    if (attendu.categorie !== undefined) {
+      notes.categorie.set(photo, noterTexte(lecture.categorie?.valeur ?? null, attendu.categorie))
+    }
+    if (attendu.sousCategorie !== undefined) {
+      notes.sousCategorie.set(
+        photo,
+        noterTexte(lecture.sousCategorie?.valeur ?? null, attendu.sousCategorie),
+      )
+    }
   }
 
   afficherCorpus(notes)

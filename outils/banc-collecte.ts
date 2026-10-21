@@ -10,10 +10,15 @@
 //   npm run banc:collecte -- corpus --moteur-ocr factice
 //   npm run banc:collecte -- corpus --modele <checkpoint-hf>
 //
+// Sans --modele, le banc juge le modele maison (outils/entrainement/modeles/lilt-alambic)
+// quand il existe : c'est celui qui tourne en production. Le checkpoint public ne sert que sur
+// un clone neuf, avant tout entrainement.
+//
 // Le banc demarre ses propres sidecars sur des ports a lui (3102 pour l'ocr, 3104 pour la
 // collecte) pour ne pas gener un `npm run dev` en cours, et les arrete a la fin.
 
 import { type ChildProcess, spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -38,6 +43,7 @@ import {
   SIDECAR_PADDLE,
 } from '@alambic/condensation'
 import {
+  type Coherence,
   ErreurAlambic,
   type Facture,
   type ImageChauffee,
@@ -57,7 +63,9 @@ const NOM_MOTEUR_COLLECTE = { factice: 'factice', lilt: 'lilt' } as const
 const PORT_BANC_OCR = 3102
 const PORT_BANC_COLLECTE = 3104
 
-const MODELE_PAR_DEFAUT = 'doc2txt/tst_lilt_cord_xlm_ft'
+const MODELE_MAISON = fileURLToPath(new URL('entrainement/modeles/lilt-alambic', import.meta.url))
+const MODELE_PUBLIC = 'doc2txt/tst_lilt_cord_xlm_ft'
+const MODELE_PAR_DEFAUT = existsSync(MODELE_MAISON) ? MODELE_MAISON : MODELE_PUBLIC
 
 const DELAI_LECTURE_MS = 60_000
 const DELAI_ETIQUETAGE_MS = 60_000
@@ -253,8 +261,8 @@ async function passer(photo: string): Promise<Passage> {
     const condensat = await condenser(image, moteurOcr)
     const condensationMs = performance.now() - debutCondensation
 
-    const facture = await collecter(condensat, image, moteurGreffier, traceur)
-    await exporter(nom, photo, image, facture)
+    const { facture, coherence } = await collecter(condensat, image, moteurGreffier, traceur)
+    await exporter(nom, photo, image, facture, coherence)
 
     return {
       photo,
@@ -288,12 +296,16 @@ async function exporter(
   photo: string,
   image: ImageChauffee,
   facture: Facture,
+  coherence: Coherence,
 ): Promise<void> {
   const contenu = {
     image: photo,
     largeur: image.largeur,
     hauteur: image.hauteur,
     modele: moteurCollecte.nom,
+    // Le moteur seul ne dit pas quel checkpoint a etiquete : deux exports se comparent mal
+    // sans le savoir.
+    checkpoint: values.moteur === NOM_MOTEUR_COLLECTE.lilt ? values.modele : null,
     mots: dernierEtiquetage.map((mot) => ({
       texte: mot.texte,
       boite: boiteNormalisee(mot.cadre, image.largeur, image.hauteur),
@@ -301,6 +313,7 @@ async function exporter(
       score: mot.score,
     })),
     facture,
+    coherence,
   }
   await writeFile(join(sorties, `${nom}--collecte.json`), `${JSON.stringify(contenu, null, 2)}\n`)
 }
@@ -377,6 +390,6 @@ function afficher(passages: readonly Passage[]) {
   const reussis = passages.filter((p) => p.verdict === STATUT_ETAPE.reussi)
   const moyenne = reussis.reduce((somme, p) => somme + p.totalMs, 0) / (reussis.length || 1)
   process.stdout.write(
-    `\n${reussis.length}/${passages.length} collectees (ocr ${moteurOcr.nom}, collecte ${moteurCollecte.nom}), ${moyenne.toFixed(0)} ms en moyenne. Exports dans ${sorties}/\n`,
+    `\n${reussis.length}/${passages.length} collectees (ocr ${moteurOcr.nom}, collecte ${moteurCollecte.nom}${values.moteur === NOM_MOTEUR_COLLECTE.lilt ? ` : ${values.modele}` : ''}), ${moyenne.toFixed(0)} ms en moyenne. Exports dans ${sorties}/\n`,
   )
 }

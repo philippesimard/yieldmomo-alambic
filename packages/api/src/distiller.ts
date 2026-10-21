@@ -67,7 +67,7 @@ export const PLAN_PIPELINE: PlanPipeline = {
     {
       etape: ETAPE.collecte,
       entree: 'Condensat + ImageChauffee',
-      sortie: 'Facture',
+      sortie: 'Recolte',
       sousEtapes: [...SOUS_ETAPES_COLLECTE],
     },
   ],
@@ -86,7 +86,12 @@ export async function distiller(original: Buffer, tracage?: Tracage): Promise<Di
   const condensat = await condenser(image, MOTEUR_LECTURE, tracage?.(ETAPE.condensation))
 
   const debutCollecte = performance.now()
-  const facture = await collecter(condensat, image, MOTEUR_ETIQUETAGE, tracage?.(ETAPE.collecte))
+  const { facture, coherence } = await collecter(
+    condensat,
+    image,
+    MOTEUR_ETIQUETAGE,
+    tracage?.(ETAPE.collecte),
+  )
   const fin = performance.now()
 
   return {
@@ -97,6 +102,7 @@ export async function distiller(original: Buffer, tracage?: Tracage): Promise<Di
       plancher: condensat.lecture.plancher,
       muets: condensat.lecture.muets,
       bordure: condensat.lecture.bordure,
+      coherence,
       chauffeMs: arrondir(debutCondensation - debutChauffe),
       condensationMs: arrondir(debutCollecte - debutCondensation),
       collecteMs: arrondir(fin - debutCollecte),

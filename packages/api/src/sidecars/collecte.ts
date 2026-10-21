@@ -12,6 +12,7 @@ const superviseur = creerSuperviseur({
     String(env.PORT_SIDECAR_COLLECTE),
     '--modele',
     env.MODELE_COLLECTE,
+    ...(env.FILS_COLLECTE === undefined ? [] : ['--fils', String(env.FILS_COLLECTE)]),
   ],
   urlSante: `http://127.0.0.1:${env.PORT_SIDECAR_COLLECTE}${SIDECAR_LILT.routeSante}`,
 })

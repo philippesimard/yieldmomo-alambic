@@ -10,19 +10,22 @@ const FICHIER_VERITE = 'verite.json'
 
 const DIACRITIQUES = /[̀-ͯ]/g
 
+// Un champ ABSENT ne se note pas : un jeu synthetique ou public ne sait pas tout dire d'un recu,
+// et le noter « vide » compterait faux tout ce que le pipeline y lirait. Un champ a `null`, lui,
+// dit que le recu ne l'imprime pas.
 export type Attendu = {
-  marchand: string | null
-  date: string | null
-  devise: string | null
-  sousTotal: number | null
-  total: number | null
-  carte: string | null
+  marchand?: string | null
+  date?: string | null
+  devise?: string | null
+  sousTotal?: number | null
+  total?: number | null
+  carte?: string | null
   // Nulles quand le recu ne dit rien du commerce — le verdict `vide` les sort alors du
   // denominateur, comme pour tout champ que le recu n'imprime pas.
-  categorie: string | null
-  sousCategorie: string | null
-  taxes: number[]
-  articles: number
+  categorie?: string | null
+  sousCategorie?: string | null
+  taxes?: number[]
+  articles?: number
 }
 
 // Un champ note : juste, faux (une valeur rendue qui n'est pas la bonne) ou manquant (rien
@@ -78,15 +81,23 @@ export function texte(valeur: unknown): string {
 // de l'exactitude (justes parmi les valeurs attendues) : un champ qui ment rarement mais se
 // tait souvent n'a pas le meme defaut qu'un champ qui repond toujours et se trompe.
 export function bilan(nom: string, verdicts: readonly (Verdict | undefined)[]): string {
-  // Un champ que le recu n'imprime pas ne se note pas : le rendre nul est le comportement
-  // attendu, pas une reussite a porter au credit du pipeline.
-  const comptables = verdicts.filter((verdict) => verdict !== VERDICT.vide)
-  const justes = comptables.filter((verdict) => verdict === VERDICT.juste).length
-  const faux = comptables.filter((verdict) => verdict === VERDICT.faux).length
-  const manquants = comptables.filter((verdict) => verdict === VERDICT.manquant).length
-  const exactitude = comptables.length === 0 ? 1 : justes / comptables.length
-  const precision = justes + faux === 0 ? 1 : justes / (justes + faux)
-  return `${nom.padEnd(14)} ${String(justes).padStart(5)} ${String(faux).padStart(5)} ${String(manquants).padStart(9)}   ${pourcent(exactitude)}   ${pourcent(precision)}`
+  const { juste, faux, manquant } = compter(verdicts)
+  const comptables = juste + faux + manquant
+  const exactitude = comptables === 0 ? 1 : juste / comptables
+  const precision = juste + faux === 0 ? 1 : juste / (juste + faux)
+  return `${nom.padEnd(14)} ${String(juste).padStart(5)} ${String(faux).padStart(5)} ${String(manquant).padStart(9)}   ${pourcent(exactitude)}   ${pourcent(precision)}`
+}
+
+export type Compte = Record<Verdict, number>
+
+// Un champ que le recu n'imprime pas (`vide`) se compte a part : le rendre nul est le
+// comportement attendu, pas une reussite a porter au credit du pipeline.
+export function compter(verdicts: readonly (Verdict | undefined)[]): Compte {
+  const compte: Compte = { juste: 0, faux: 0, manquant: 0, vide: 0 }
+  for (const verdict of verdicts) {
+    if (verdict !== undefined) compte[verdict] += 1
+  }
+  return compte
 }
 
 export const EN_TETE_BILAN = `${'champ'.padEnd(14)} juste  faux  manquant   exact.   precis.`

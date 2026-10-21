@@ -1,0 +1,383 @@
+{
+  "checkpoints": [
+    "lilt-alambic"
+  ],
+  "photos": 26,
+  "facturesJustes": 12,
+  "champs": {
+    "marchand": {
+      "juste": 21,
+      "faux": 5,
+      "manquant": 0,
+      "vide": 0
+    },
+    "date": {
+      "juste": 18,
+      "faux": 1,
+      "manquant": 1,
+      "vide": 6
+    },
+    "devise": {
+      "juste": 25,
+      "faux": 0,
+      "manquant": 0,
+      "vide": 1
+    },
+    "sousTotal": {
+      "juste": 14,
+      "faux": 1,
+      "manquant": 3,
+      "vide": 8
+    },
+    "total": {
+      "juste": 25,
+      "faux": 0,
+      "manquant": 1,
+      "vide": 0
+    },
+    "carte": {
+      "juste": 17,
+      "faux": 0,
+      "manquant": 2,
+      "vide": 7
+    },
+    "categorie": {
+      "juste": 20,
+      "faux": 0,
+      "manquant": 4,
+      "vide": 2
+    },
+    "sousCategorie": {
+      "juste": 20,
+      "faux": 0,
+      "manquant": 4,
+      "vide": 2
+    },
+    "taxes": {
+      "juste": 13,
+      "faux": 4,
+      "manquant": 0,
+      "vide": 9
+    },
+    "articles": {
+      "juste": 10,
+      "faux": 7,
+      "manquant": 1,
+      "vide": 8
+    }
+  },
+  "verdicts": {
+    "Image 10.jpeg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "vide",
+      "articles": "juste"
+    },
+    "Image 11.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "vide",
+      "sousCategorie": "vide",
+      "taxes": "vide",
+      "articles": "vide"
+    },
+    "Image 12.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "faux",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "vide",
+      "articles": "vide"
+    },
+    "Image 13.jpeg": {
+      "marchand": "juste",
+      "date": "vide",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "Image 14.jpeg": {
+      "marchand": "juste",
+      "date": "vide",
+      "devise": "juste",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "Image 15.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "manquant"
+    },
+    "Image 16.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "vide",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 17.jpeg": {
+      "marchand": "juste",
+      "date": "vide",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "Image 18.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "Image 19.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "vide",
+      "sousCategorie": "vide",
+      "taxes": "vide",
+      "articles": "vide"
+    },
+    "Image 2.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 20.jpeg": {
+      "marchand": "juste",
+      "date": "vide",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 21.jpeg": {
+      "marchand": "faux",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 22.jpeg": {
+      "marchand": "faux",
+      "date": "faux",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "manquant",
+      "sousCategorie": "manquant",
+      "taxes": "vide",
+      "articles": "vide"
+    },
+    "Image 23.jpeg": {
+      "marchand": "juste",
+      "date": "vide",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 24.jpeg": {
+      "marchand": "faux",
+      "date": "manquant",
+      "devise": "juste",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "manquant",
+      "categorie": "manquant",
+      "sousCategorie": "manquant",
+      "taxes": "juste",
+      "articles": "faux"
+    },
+    "Image 25.jpeg": {
+      "marchand": "faux",
+      "date": "vide",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "manquant",
+      "categorie": "manquant",
+      "sousCategorie": "manquant",
+      "taxes": "faux",
+      "articles": "faux"
+    },
+    "Image 26.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 3.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "faux",
+      "articles": "vide"
+    },
+    "Image 4.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 5.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "juste",
+      "carte": "vide",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "juste",
+      "articles": "juste"
+    },
+    "Image 6.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "juste",
+      "total": "manquant",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "vide",
+      "articles": "faux"
+    },
+    "Image 7.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "vide",
+      "articles": "vide"
+    },
+    "Image 8.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "vide",
+      "articles": "vide"
+    },
+    "Image 9.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "manquant",
+      "total": "juste",
+      "carte": "vide",
+      "categorie": "manquant",
+      "sousCategorie": "manquant",
+      "taxes": "faux",
+      "articles": "juste"
+    },
+    "Image.jpeg": {
+      "marchand": "juste",
+      "date": "juste",
+      "devise": "juste",
+      "sousTotal": "vide",
+      "total": "juste",
+      "carte": "juste",
+      "categorie": "juste",
+      "sousCategorie": "juste",
+      "taxes": "vide",
+      "articles": "vide"
+    }
+  }
+}

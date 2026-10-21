@@ -4,6 +4,7 @@ import {
   GENRE_APERCU,
   grouperEnLignes,
   type ImageChauffee,
+  type Recolte,
   STATUT_ETAPE,
   type Traceur,
 } from '@alambic/noyau'
@@ -35,13 +36,14 @@ export const SOUS_ETAPES_COLLECTE = [
 // ici ; la reconstruction et les reconnaisseurs restent purs et deterministes, exerces a
 // l'identique par tous les moteurs. L'image accompagne le condensat parce que le modele lit
 // aussi les pixels — et c'est elle qui porte les dimensions que la normalisation des boites
-// demande.
+// demande. La coherence des montants accompagne la facture sans y entrer : elle part dans les
+// mesures, pas chez le consommateur.
 export async function collecter(
   condensat: Condensat,
   image: ImageChauffee,
   moteur: MoteurEtiquetage,
   traceur?: Traceur,
-): Promise<Facture> {
+): Promise<Recolte> {
   const finDecoupage = traceur?.demarrer(SOUS_ETAPE.decoupageMots)
   const mots = decouperEnMots(condensat.blocs)
   finDecoupage?.({
@@ -87,6 +89,7 @@ export async function collecter(
         // reconstruction, article par article.
         valeur: {
           entites: entites.map((entite) => `${entite.etiquette} : ${entite.texte}`),
+          coherence: montants.coherence,
           sousTotal: montants.sousTotal?.valeur ?? null,
           total: montants.total?.valeur ?? null,
           taxes: montants.taxes,
@@ -135,7 +138,7 @@ export async function collecter(
     ],
   })
 
-  return facture
+  return { facture, coherence: montants.coherence }
 }
 
 // Les champs qu'on n'a pas su remplir, lus sur la facture elle-meme plutot qu'enumeres a la

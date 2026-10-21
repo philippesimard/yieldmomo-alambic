@@ -225,8 +225,10 @@ la convention d'OVH, et stdout reste lisible.
 
 Chaque ligne porte `service`, `environnement`, `versionService`, `conteneur` et `niveau`. Une
 distillation réussie porte en plus ses mesures (`totalMs_num`, `chauffeMs_num`,
-`condensationMs_num`, `collecteMs_num`, `octets_num`, `qualite_num`, `muets_num`), et un refus
-porte son `code`.
+`condensationMs_num`, `collecteMs_num`, `octets_num`, `qualite_num`, `muets_num`, et `coherence`
+en texte : `coherente`, `incoherente` ou `indeterminee`), et un refus porte son `code`. La part de
+`coherence:coherente` parmi les distillations est le seul indice de justesse qui ne demande
+aucune vérité terrain : une baisse dit que la lecture des factures se dégrade.
 
 Le champ `evenement` nomme les lignes qui comptent — `short_message` est analysé en texte intégral,
 filtrer dessus serait fragile :
@@ -432,6 +434,12 @@ tableau de bord de [Surveillance](#surveillance) le donne directement.
 `DETECTION_OCR=mobile`, et non `server` : mesuré sur le corpus, `server` coûte 4 à 6× la latence
 de `mobile` (16 s la photo simple, 83 s la plus dense) et dépasse `DELAI_OCR_MS`. Le garder
 demanderait de pousser `DELAI_DISTILLATION_MS` au-delà de 85 s.
+
+`FILS_OCR`, vide, vaut un thread par cœur : sans réglage, Paddle en prend 10 quel que soit le
+nombre de cœurs, plus que les 6 du VPS. Les deux sidecars se partagent pourtant ces cœurs dès que
+deux ouvriers sont à des étapes différentes. **Le partage (essai : `FILS_OCR=4`,
+`FILS_COLLECTE=2`) se décide sur le `condensationMs` et le `collecteMs` des logs**, pas sur le
+poste : Paddle n'utilise qu'un cœur sur macOS.
 
 `TAILLE_MAX_IMAGE=15728640` (15 Mo), plus large que la limite de photo de profil de YieldMomo
 (10 Mo) : une photo prise au grand-angle d'un iPhone récent dépasse régulièrement les 10 Mo, et

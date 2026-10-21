@@ -172,11 +172,18 @@ def principal():
     parseur.add_argument('--port', type=int, default=3103)
     parseur.add_argument('--modele', default=MODELE_PAR_DEFAUT)
     parseur.add_argument('--preparer', action='store_true')
+    parseur.add_argument('--fils', type=int)
     arguments = parseur.parse_args()
 
     # transformers est bavard au chargement ; seuls les avertissements et erreurs meritent
     # stderr.
     logging.disable(logging.INFO)
+
+    if arguments.fils is not None:
+        import torch
+
+        # Sans --fils, torch prend un thread par coeur physique.
+        torch.set_num_threads(arguments.fils)
 
     global tokenizer, modele
     tokenizer, modele = charger(arguments.modele)

@@ -12,6 +12,8 @@ const superviseur = creerSuperviseur({
     String(env.PORT_SIDECAR_OCR),
     '--detection',
     env.DETECTION_OCR,
+    '--fils',
+    String(env.FILS_OCR),
   ],
   urlSante: `http://127.0.0.1:${env.PORT_SIDECAR_OCR}${SIDECAR_PADDLE.routeSante}`,
 })

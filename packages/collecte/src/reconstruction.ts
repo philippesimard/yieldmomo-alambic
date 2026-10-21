@@ -1,4 +1,5 @@
-import type { Article, Facture, Taxe } from '@alambic/noyau'
+import type { Article, Coherence, Facture, Taxe } from '@alambic/noyau'
+import { arbitrer, type MontantLu, type TaxeLue } from './coherence'
 import { ETIQUETTE, type Etiquette, type MotEtiquete } from './etiquettes'
 import {
   MARQUEURS_ECARTES,
@@ -64,14 +65,7 @@ export type Reconstruction = {
   taxes: Taxe[]
   total: Facture['total']
   articles: Article[]
-}
-
-// Un montant localise : la ligne permet d'ecarter un candidat deja consomme par un autre
-// champ (le total et le sous-total d'un recu ne partagent jamais leur ligne).
-type MontantTrouve = {
-  valeur: number
-  confiance: number
-  ligne: readonly MotEtiquete[] | null
+  coherence: Coherence
 }
 
 // Regroupe les mots etiquetes en entites, dans l'ordre de lecture. B- ouvre, I- continue ; un
@@ -112,96 +106,99 @@ export function extraireEntites(mots: readonly MotEtiquete[]): Entite[] {
   return entites
 }
 
+// Le total, le sous-total et les taxes ne se choisissent pas chacun de leur cote : chaque champ
+// propose ses candidats, du plus sur au moins sur, et le solveur retient la combinaison que le
+// bilan du recu confirme.
 export function reconstruire(
   entites: readonly Entite[],
   lignes: readonly MotEtiquete[][],
 ): Reconstruction {
-  const total = reconstruireTotal(entites, lignes)
-  // Le sous-total ne peut pas vivre sur la ligne du total : quand le modele etiquette les deux
-  // sur le meme montant, c'est le total qui a raison et le sous-total qui se cherche ailleurs.
-  const sousTotal =
-    trouverMontant(entites, lignes, ETIQUETTE.sousTotal, total?.ligne ?? null) ??
-    chercherMarqueur(lignes, MARQUEURS_SOUS_TOTAL, [], total?.ligne ?? null)
-  return {
-    sousTotal: rendu(sousTotal),
+  const arbitrage = arbitrer({
+    totaux: candidatsTotal(entites, lignes),
+    sousTotaux: [
+      ...montantsEtiquetes(entites, lignes, ETIQUETTE.sousTotal),
+      ...montantsMarques(lignes, MARQUEURS_SOUS_TOTAL, []),
+    ],
     taxes: reconstruireTaxes(entites, lignes),
-    total: rendu(total),
+  })
+  return {
+    sousTotal: rendu(arbitrage.sousTotal),
+    taxes: arbitrage.taxes,
+    total: rendu(arbitrage.total),
     articles: reconstruireArticles(lignes),
+    coherence: arbitrage.coherence,
   }
 }
 
-// La derniere entite en ordre de lecture porteuse d'un montant : un recu imprime souvent un
-// rappel en tete, et c'est le pied de ticket qui fait foi. Le montant se lit dans l'entite,
-// ou a defaut sur sa ligne : en zero-shot le modele etiquette souvent le mot « TOTAL » en
-// laissant le chiffre d'a cote sous une autre etiquette.
-function trouverMontant(
+// Les entites porteuses d'un montant, de la derniere a la premiere en ordre de lecture : un recu
+// imprime souvent un rappel en tete, et c'est le pied de ticket qui fait foi. Le montant se lit
+// dans l'entite, ou a defaut sur sa ligne : en zero-shot le modele etiquette souvent le mot
+// « TOTAL » en laissant le chiffre d'a cote sous une autre etiquette.
+function montantsEtiquetes(
   entites: readonly Entite[],
   lignes: readonly MotEtiquete[][],
   etiquette: Etiquette,
-  ligneExclue: readonly MotEtiquete[] | null,
-): MontantTrouve | null {
+): MontantLu[] {
+  const montants: MontantLu[] = []
   for (let indice = entites.length - 1; indice >= 0; indice--) {
     const entite = entites[indice]
     if (entite === undefined || entite.etiquette !== etiquette) continue
 
-    const ligne = ligneDe(lignes, entite)
-    if (ligneExclue !== null && ligne === ligneExclue) continue
-
-    const valeur = montantDe(entite.texte) ?? (ligne === null ? null : montantDe(texteDe(ligne)))
-    if (valeur === null) continue
-
-    return { valeur, confiance: entite.confiance, ligne }
+    const rang = rangDe(lignes, entite)
+    const ligne = rang === null ? undefined : lignes[rang]
+    const valeur =
+      montantDe(entite.texte) ?? (ligne === undefined ? null : montantDe(texteDe(ligne)))
+    if (valeur !== null) montants.push({ valeur, confiance: entite.confiance, ligne: rang })
   }
-  return null
+  return montants
 }
 
-function rendu(trouve: MontantTrouve | null): Facture['total'] {
-  return trouve === null ? null : { valeur: trouve.valeur, confiance: trouve.confiance }
+function rendu(lu: MontantLu | null): Facture['total'] {
+  return lu === null ? null : { valeur: lu.valeur, confiance: lu.confiance }
 }
 
-// Le total est le champ qui compte le plus : trois filets, du plus direct au plus deduit.
-// L'etiquette du modele d'abord ; sinon la ligne a marqueur (« TOTAL 26,43 », puis
+// Le total est le champ qui compte le plus : ses candidats vont du plus direct au plus deduit.
+// L'etiquette du modele d'abord ; puis la ligne a marqueur (« TOTAL 26,43 », puis
 // « MONTANT $17.00 » des recus de terminal) ; en dernier, un montant paye par carte ou
 // comptant.
-function reconstruireTotal(
-  entites: readonly Entite[],
-  lignes: readonly MotEtiquete[][],
-): MontantTrouve | null {
+function candidatsTotal(entites: readonly Entite[], lignes: readonly MotEtiquete[][]): MontantLu[] {
   // Le modele aussi se fait prendre par le bloc d'economies du pied de ticket : il etiquette
   // « VALEUR TOTAL : 0,50 $ » comme le total. Une ligne qu'un marqueur ecarte n'est pas le
   // total, quelle que soit la source qui l'affirme.
-  const total = trouverMontant(entites, lignes, ETIQUETTE.total, null)
-  if (total !== null && !ecartee(total.ligne)) return total
-
-  const parMarqueur =
-    chercherMarqueur(lignes, MARQUEURS_TOTAL, MARQUEURS_ECARTES, null) ??
-    chercherMarqueur(lignes, MARQUEURS_MONTANT, MARQUEURS_ECARTES, null)
-  if (parMarqueur !== null) return parMarqueur
-
-  const paye =
-    trouverMontant(entites, lignes, ETIQUETTE.totalCarte, null) ??
-    trouverMontant(entites, lignes, ETIQUETTE.totalComptant, null)
-  if (paye === null) return null
-  return { ...paye, confiance: paye.confiance * FACTEUR_REPLI_TOTAL }
+  const parModele = montantsEtiquetes(entites, lignes, ETIQUETTE.total).filter(
+    (candidat) => !ecartee(lignes, candidat.ligne),
+  )
+  const payes = [
+    ...montantsEtiquetes(entites, lignes, ETIQUETTE.totalCarte),
+    ...montantsEtiquetes(entites, lignes, ETIQUETTE.totalComptant),
+  ].map((paye) => ({ ...paye, confiance: paye.confiance * FACTEUR_REPLI_TOTAL }))
+  return [
+    ...parModele,
+    ...montantsMarques(lignes, MARQUEURS_TOTAL, MARQUEURS_ECARTES),
+    ...montantsMarques(lignes, MARQUEURS_MONTANT, MARQUEURS_ECARTES),
+    ...payes,
+  ]
 }
 
-function ecartee(ligne: readonly MotEtiquete[] | null): boolean {
-  if (ligne === null) return false
+function ecartee(lignes: readonly MotEtiquete[][], rang: number | null): boolean {
+  const ligne = rang === null ? undefined : lignes[rang]
+  if (ligne === undefined) return false
   const normalise = texteDe(ligne).toLowerCase()
   return MARQUEURS_ECARTES.some((marqueur) => normalise.includes(marqueur))
 }
 
-// La derniere ligne qui porte un marqueur et un montant lisible : c'est le pied de ticket qui
-// fait foi. Meme reconnaissance que le moteur factice, ici en repli du modele.
-function chercherMarqueur(
+// Les lignes qui portent un marqueur et un montant lisible, de la derniere a la premiere : c'est
+// le pied de ticket qui fait foi. Meme reconnaissance que le moteur factice, ici en repli du
+// modele.
+function montantsMarques(
   lignes: readonly MotEtiquete[][],
   marqueurs: readonly string[],
   ecartes: readonly string[],
-  ligneExclue: readonly MotEtiquete[] | null,
-): MontantTrouve | null {
+): MontantLu[] {
+  const montants: MontantLu[] = []
   for (let indice = lignes.length - 1; indice >= 0; indice--) {
     const ligne = lignes[indice]
-    if (ligne === undefined || ligne === ligneExclue) continue
+    if (ligne === undefined) continue
 
     const texte = texteDe(ligne)
     const normalise = texte.toLowerCase()
@@ -211,44 +208,50 @@ function chercherMarqueur(
     const valeur = montantDe(texte)
     if (valeur === null) continue
 
-    return { valeur, confiance: confianceOcrDe(ligne) * FACTEUR_MARQUEUR, ligne }
+    montants.push({ valeur, confiance: confianceOcrDe(ligne) * FACTEUR_MARQUEUR, ligne: indice })
   }
-  return null
+  return montants
 }
 
 // Les taxes se lisent a deux sources : les entites que le modele etiquette, puis les lignes
 // que le lexique repere et que le modele a manquees — en zero-shot il prend volontiers une
 // ligne « TPS 1,45 » pour un article. Le nom et le taux se lisent toujours sur la ligne.
-function reconstruireTaxes(entites: readonly Entite[], lignes: readonly MotEtiquete[][]): Taxe[] {
-  const taxes: Taxe[] = []
-  const lignesPrises = new Set<readonly MotEtiquete[]>()
+function reconstruireTaxes(
+  entites: readonly Entite[],
+  lignes: readonly MotEtiquete[][],
+): TaxeLue[] {
+  const taxes: TaxeLue[] = []
+  const lignesPrises = new Set<number>()
 
   for (const entite of entites) {
     if (entite.etiquette !== ETIQUETTE.taxe) continue
-    const ligne = ligneDe(lignes, entite)
+    const rang = rangDe(lignes, entite)
+    const ligne = rang === null ? undefined : lignes[rang]
     // Une ligne ne porte qu'une taxe. Le modele y etiquette pourtant plusieurs nombres quand
     // elle donne le taux et l'assiette (« T.P.S 5 % 35,37 @ 5,000 % 1,77 ») : sans ce garde-fou
     // la meme taxe sort trois fois, assiette comprise, et le consommateur qui les additionne
     // se trompe du tout au tout.
-    if (ligne !== null && lignesPrises.has(ligne)) continue
+    if (rang !== null && lignesPrises.has(rang)) continue
 
     // Le montant se lit sur la LIGNE et non dans l'entite : sur un recu, la taxe est le dernier
     // nombre de sa ligne, alors que l'entite peut tomber sur l'assiette ou sur le taux.
-    const montant = (ligne === null ? null : montantDe(texteDe(ligne))) ?? montantDe(entite.texte)
+    const montant =
+      (ligne === undefined ? null : montantDe(texteDe(ligne))) ?? montantDe(entite.texte)
     if (montant === null) continue
 
-    if (ligne !== null) lignesPrises.add(ligne)
-    const texteLigne = ligne === null ? '' : texteDe(ligne)
+    if (rang !== null) lignesPrises.add(rang)
+    const texteLigne = ligne === undefined ? '' : texteDe(ligne)
     taxes.push({
       nom: texteLigne.match(LEXIQUE_TAXE)?.[0] ?? null,
       taux: tauxDe(texteLigne),
       montant,
       confiance: entite.confiance,
+      ligne: rang,
     })
   }
 
-  for (const ligne of lignes) {
-    if (lignesPrises.has(ligne)) continue
+  for (const [rang, ligne] of lignes.entries()) {
+    if (lignesPrises.has(rang)) continue
     const texte = texteDe(ligne)
     const nom = texte.match(LEXIQUE_TAXE)?.[0]
     if (nom === undefined || MENTION_TOTAL.test(texte)) continue
@@ -260,6 +263,7 @@ function reconstruireTaxes(entites: readonly Entite[], lignes: readonly MotEtiqu
       taux: tauxDe(texte),
       montant,
       confiance: confianceOcrDe(ligne) * FACTEUR_TAXE_LEXIQUE,
+      ligne: rang,
     })
   }
 
@@ -305,10 +309,12 @@ function articleDe(ligne: readonly MotEtiquete[]): Article | null {
   }
 }
 
-function ligneDe(lignes: readonly MotEtiquete[][], entite: Entite): readonly MotEtiquete[] | null {
+// Le rang de la ligne de l'entite, en ordre de lecture.
+function rangDe(lignes: readonly MotEtiquete[][], entite: Entite): number | null {
   const premier = entite.mots[0]
   if (premier === undefined) return null
-  return lignes.find((ligne) => ligne.includes(premier)) ?? null
+  const rang = lignes.findIndex((ligne) => ligne.includes(premier))
+  return rang === -1 ? null : rang
 }
 
 function tauxDe(texte: string): number | null {

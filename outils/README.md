@@ -42,6 +42,24 @@ Deux commandes secondaires : `npm run tester-recus` (la suite du générateur) e
 `npm run verifier-boites -- <image>` (redessine les boîtes sur un reçu, pour vérifier à l'œil que
 l'annotation suit la déformation).
 
+## La référence
+
+Chaque changement du pipeline se juge contre une référence figée, champ par champ, et ne passe
+que si aucun champ ne recule :
+
+```bash
+npm run banc:collecte -- corpus                                        # passe les photos
+npm run mesure -- corpus --reference outils/references/v1-corpus.json  # compare, code 1 si recul
+npm run mesure -- corpus --json outils/references/<nom>.json           # fige une nouvelle référence
+```
+
+Un recul, c'est un champ qui perd une réponse juste **ou** gagne une réponse fausse. La mesure
+liste aussi chaque photo dont un champ juste est devenu faux ou manquant.
+
+`outils/references/` est versionné : une référence ne contient que des comptes et des verdicts
+(« juste », « faux »…), jamais une valeur lue sur un reçu. Sans `--modele`, le banc juge le modèle
+maison quand il existe, et chaque export note quel checkpoint l'a étiqueté.
+
 ## Le lien à ne pas casser
 
 `entrainement/donnees.py` fige dans son tuple `CHAMPS` le vocabulaire d'étiquettes que le
