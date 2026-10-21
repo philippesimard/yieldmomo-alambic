@@ -29,6 +29,7 @@
     "tester-recus": "tsx outils/python.ts -m pytest outils/recus",
     "entrainer-modele": "tsx outils/python.ts outils/entrainement/entrainement.py",
     "evaluer-modele": "tsx outils/python.ts outils/entrainement/evaluation.py",
+    "exporter-modele": "tsx outils/python.ts outils/entrainement/exporter.py",
     "publier-modele": "tsx outils/publier-modele.ts"
   },
   "devDependencies": {

@@ -30,7 +30,40 @@ parce qu'ils sont traités à l'identique.
 Le moteur n'est jamais choisi ici : il arrive en paramètre. Le câblage se fait dans
 `packages/api/src/distiller.ts`, en une ligne.
 
-## Deux moteurs
+## Trois moteurs
+
+### `creerMoteurOnnx` — les mêmes poids, sans Python
+
+Les modèles PP-OCRv5 du sidecar Paddle, convertis en ONNX sans réentraînement
+([`modeles/`](modeles/README.md), 13 Mo versionnés dans le dépôt), exécutés par
+`onnxruntime-node` **dans l'ouvrier qui lit** : ni sidecar, ni verrou, ni aller-retour HTTP.
+Chaque ouvrier charge ses sessions à sa première lecture ; `FILS_OCR` est le budget de threads de
+tous les ouvriers, partagé entre eux.
+
+Tout ce qui entoure le réseau est réécrit en TypeScript, à l'identique de PaddleX, dans
+[`src/onnx/`](src/onnx) :
+
+| Fichier | Rôle |
+|---|---|
+| `pixels.ts` | Redimensionnement bilinéaire et rognure bicubique d'OpenCV, quart de tour |
+| `detection.ts` | Côté long borné à 2016 px et multiple de 32, normalisation, post-traitement DB |
+| `rectangle.ts` | Rectangle d'aire minimale (enveloppe convexe), coins dans l'ordre de Paddle |
+| `reconnaissance.ts` | Lignes à 48 px de haut, lots de 6 triés par largeur, décodage CTC |
+| `moteur.ts` | Les sessions, la seconde lecture des lignes sous 0,90, l'assemblage |
+
+Trois détails décident de la parité, mesurés sur le corpus :
+
+- **Le rectangle orienté.** Noter une région sur son rectangle droit fait tomber sous le seuil
+  les lignes un peu penchées (un titre passe de 0,99 à 0,52) : on la note, et on la rogne, sur le
+  rectangle d'aire minimale, comme Paddle.
+- **Les arrondis de Python.** `round()` arrondit les demis au pair : les dimensions du réseau
+  aussi.
+- **La seconde lecture.** Reprise du sidecar à l'identique : c'est elle qui corrige 419,10 en
+  49,10.
+
+Sur le corpus, la lecture rejoint celle de Paddle à 95 % des mots, avec autant de boîtes ; les
+écarts restants vont dans les deux sens (une TVQ lue que Paddle manquait, un premier chiffre
+perdu ailleurs). Elle prend environ 1 s par photo sur 4 threads du M2, contre 9 s pour Paddle.
 
 ### `moteurFactice`
 

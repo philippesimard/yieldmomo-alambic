@@ -1,6 +1,7 @@
 export { condenser, SOUS_ETAPES_CONDENSATION } from './condensation'
 export { moteurFactice } from './factice'
 export type { MoteurOcr } from './moteur'
+export { creerMoteurOnnx, type OptionsMoteurOnnx } from './onnx/moteur'
 export type { OptionsMoteurPaddle } from './paddle'
 export { creerMoteurPaddle } from './paddle'
 export { SIDECAR_PADDLE } from './sidecar'

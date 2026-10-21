@@ -3,70 +3,39 @@
 # Alambic : lecture de factures et de recus. Deploye comme service prive, joignable par la
 # seule api de YieldMomo (voir ALAMBIC_URL de son cote) et jamais par un navigateur.
 #
-# linux/amd64 uniquement : paddlepaddle ne publie pas de wheel linux arm64. Sur Apple
-# Silicon : docker build --platform linux/amd64 .
+# Aucun Python : l'ocr et le modele de la Collecte tournent en ONNX dans les ouvriers node
+# (MOTEUR_OCR=onnx, MOTEUR_COLLECTE=onnx). Construit et mesure en linux/amd64, la plateforme du
+# VPS. Sur Apple Silicon : docker build --platform linux/amd64 .
 FROM node:22-slim
 WORKDIR /app
 
-# --- Sidecar ocr (etape Condensation) ---
-# La couche la plus stable d'abord : elle ne bouge que si les dependances python changent.
-# libgl1 et libglib2.0-0 : exigees par l'opencv que paddleocr installe. libgomp1 : le runtime
-# OpenMP que libpaddle.so charge au demarrage, absent de node:22-slim.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 python3-venv libgl1 libglib2.0-0 libgomp1 curl ca-certificates \
+# curl : la descente du modele de la Collecte au build, et rien d'autre.
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-COPY packages/condensation/sidecar/requirements.lock ./packages/condensation/sidecar/
-RUN python3 -m venv /opt/ocr \
-    && /opt/ocr/bin/pip install --no-cache-dir -r packages/condensation/sidecar/requirements.lock
-COPY packages/condensation/sidecar ./packages/condensation/sidecar
 
-# Les modeles sont telecharges au build, dans l'image : en production rien ne se telecharge et
-# rien ne s'ecrit sur disque, le service reste sans etat.
-ENV PADDLE_PDX_CACHE_HOME=/opt/paddlex
-RUN /opt/ocr/bin/python packages/condensation/sidecar/serveur.py --preparer
-ENV CHEMIN_PYTHON_OCR=/opt/ocr/bin/python
-
-# --- Sidecar d'etiquetage (etape Collecte) ---
-# Un venv separe de /opt/ocr : les pins de torch et de paddle ne se negocient jamais entre eux.
-COPY packages/collecte/sidecar/requirements.lock ./packages/collecte/sidecar/
-RUN python3 -m venv /opt/collecte \
-    && /opt/collecte/bin/pip install --no-cache-dir -r packages/collecte/sidecar/requirements.lock
-COPY packages/collecte/sidecar ./packages/collecte/sidecar
-
-# Poids du modele dans l'image au build, comme les modeles paddle ; HF_HUB_OFFLINE garantit
-# ensuite qu'aucune execution ne tentera de telecharger.
-ENV HF_HOME=/opt/hf
-
-# Le checkpoint maison pese plus d'un Go et ne se versionne pas : il vit sur un bucket
-# compatible S3 (OVH Object Storage), et `npm run publier-modele` l'y depose. Vide, l'image se
-# rabat sur le checkpoint public du Hub, qui travaille en zero-shot sur un recu quebecois : bon
-# pour un essai, jamais pour la production — env.ts refuse d'y demarrer sans MODELE_COLLECTE.
-ARG MODELE_URL=""
-
+# Le modele de la Collecte (190 Mo, exporte par `npm run exporter-modele`) ne se versionne pas :
+# il vit sur un bucket compatible S3 (OVH Object Storage), et `npm run publier-modele` l'y
+# depose. Les modeles de l'ocr, eux, sont dans le depot (packages/condensation/modeles).
+#
 # Les poids entrent au build, jamais a l'execution : le conteneur reste sans etat. MODELE_URL
 # est une URL presignee que `npm run publier-modele` emet, valable sept jours : aucune clef S3
-# ne descend sur le serveur, et l'URL ne vaut plus rien une fois expiree. Un secret de build
-# serait plus etanche encore, mais son montage depend de la plateforme ; l'URL marche partout.
+# ne descend sur le serveur, et l'URL ne vaut plus rien une fois expiree. Vide, l'image n'a pas
+# de modele de Collecte, et env.ts refuse d'y demarrer en production.
+#
 # Pas de pipe `curl | tar` : le shell de debian ignore pipefail, et une descente coupee en deux
 # passerait pour un succes. --fail pour qu'une reponse 403 ne s'ecrive pas dans l'archive.
-RUN if [ -z "$MODELE_URL" ]; then \
-      /opt/collecte/bin/python packages/collecte/sidecar/serveur.py --preparer; \
-    else \
+ARG MODELE_URL=""
+RUN if [ -n "$MODELE_URL" ]; then \
       curl --fail --silent --show-error --location --retry 3 \
            --output /tmp/modele.tar.gz "$MODELE_URL" \
       && mkdir -p /opt/modele-collecte \
       && tar -xzf /tmp/modele.tar.gz -C /opt/modele-collecte --strip-components=1 \
       && rm -f /tmp/modele.tar.gz \
-      && chmod -R a+rX /opt/modele-collecte \
-      && /opt/collecte/bin/python packages/collecte/sidecar/serveur.py \
-           --preparer --modele /opt/modele-collecte; \
+      && chmod -R a+rX /opt/modele-collecte; \
     fi
-
-ENV HF_HUB_OFFLINE=1
 # Expansion docker : le chemin quand une URL est fournie, vide sinon. Vide vaut « non definie »
-# pour env.ts, qui retombe alors sur le checkpoint public — et refuse en production.
+# pour env.ts, qui refuse alors de demarrer en production.
 ENV MODELE_COLLECTE=${MODELE_URL:+/opt/modele-collecte}
-ENV CHEMIN_PYTHON_COLLECTE=/opt/collecte/bin/python
 
 # --- Service node ---
 # Manifestes d'abord : le cache Docker du `npm ci` n'est invalide que si un package.json ou le
@@ -78,13 +47,15 @@ COPY packages/condensation/package.json ./packages/condensation/
 COPY packages/collecte/package.json ./packages/collecte/
 COPY packages/api/package.json ./packages/api/
 
-# Le postinstall de la racine prepare les venvs des sidecars. Ici ils sont deja construits plus
-# haut, et CHEMIN_PYTHON_OCR / CHEMIN_PYTHON_COLLECTE le lui disent ; le script doit tout de
-# meme exister pour que npm ci aboutisse.
+# Le postinstall de la racine prepare les venvs Python du poste ; ALAMBIC_SANS_SIDECARS le coupe
+# ici, ou il n'y a rien a preparer. Le script doit tout de meme exister pour que npm ci aboutisse.
 COPY outils/preparer-sidecars.ts ./outils/
 
 # sharp s'installe par binaires precompiles sur node:22-slim (linux glibc x64 et arm64) :
-# aucune chaine de compilation ni paquet libvips a ajouter a l'image.
+# aucune chaine de compilation ni paquet libvips a ajouter a l'image. onnxruntime-node embarque
+# deja son binaire linux x64 ; sans ONNXRUNTIME_NODE_INSTALL, son postinstall irait chercher les
+# bibliotheques CUDA, inutiles sur un serveur sans carte graphique.
+ENV ALAMBIC_SANS_SIDECARS=1 ONNXRUNTIME_NODE_INSTALL=skip
 RUN npm ci --omit=dev
 
 COPY packages ./packages
@@ -101,14 +72,13 @@ ENV UV_THREADPOOL_SIZE=16
 
 EXPOSE 3100
 
-# /health et non /ready : les deux sondes exigent un ouvrier vivant et des moteurs prets, mais
-# seule /health reste en 200 pendant une maintenance volontaire (MODE_MAINTENANCE). Viser /ready
-# ferait redemarrer le conteneur en boucle pendant toute la maintenance, alors que le process va
-# tres bien. /ready reste la sonde du load balancer, celle qui dit s'il faut envoyer du trafic.
-# start-period de 300s : chaque sidecar charge son modele avant de repondre, /health attend les
-# deux, et un vCore de vps met bien plus de temps qu'un M2 a lire plus d'un Go de poids. Trop
-# court, la tache redemarrerait en boucle avant meme d'avoir vu le premier trafic.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=300s --retries=3 \
+# /health et non /ready : les deux sondes exigent un ouvrier vivant, mais seule /health reste en
+# 200 pendant une maintenance volontaire (MODE_MAINTENANCE). Viser /ready ferait redemarrer le
+# conteneur en boucle pendant toute la maintenance, alors que le process va tres bien. /ready
+# reste la sonde du load balancer, celle qui dit s'il faut envoyer du trafic.
+# start-period de 30s : il n'y a plus de sidecar a attendre ; chaque ouvrier charge ses modeles a
+# sa premiere facture.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3100/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 # tsx consomme la source TypeScript directement, sans pipeline de build a maintenir : c'est
@@ -118,10 +88,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=300s --retries=3 \
 # gracieux ne s'executerait jamais et l'orchestrateur finirait par tuer le process. Ici node
 # est PID 1 et recoit le signal directement.
 # Le service ne sert que du json a partir d'images : rien n'y justifie les privileges de root.
-# Rien n'est ecrit sur disque a l'execution — les venvs et les modeles sont bakes au build et ne
-# sont plus que lus — donc un simple droit de lecture suffit, et les fichiers poses par root le
-# sont en 644/755. Si une evolution venait a ecrire dans /opt/hf ou /opt/paddlex, il faudrait leur
-# donner la propriete a node.
+# Rien n'est ecrit sur disque a l'execution — les modeles sont bakes au build et ne sont plus que
+# lus — donc un simple droit de lecture suffit, et les fichiers poses par root le sont en
+# 644/755.
 USER node
 
 CMD ["node", "--import", "tsx", "packages/api/src/index.ts"]

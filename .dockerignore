@@ -13,8 +13,8 @@ node_modules
 # aussi son code et sa page de l'image.
 packages/hublot
 
-# Python du poste : l'image construit son propre venv dans /opt/ocr.
-packages/*/sidecar/.venv
+# Les sidecars Python : l'image n'a pas de Python, ses moteurs sont en ONNX.
+packages/*/sidecar
 **/__pycache__
 
 # Corpus de photos, jeu synthetique et checkpoints : gitignores, donc absents du clone que

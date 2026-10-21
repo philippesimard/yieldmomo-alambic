@@ -106,12 +106,12 @@ catégories d'un même groupe, on rend le groupe seul (« TIM HORTONS » est de 
 qu'on sache dire restaurant ou café) ; quand elle en désigne de groupes différents, on ne rend
 rien. Les enseignes hors catalogue — la majorité — tombent aussi sur `null`.
 
-> **État actuel :** la Condensation lit avec **PaddleOCR** (PP-OCRv5) et la Collecte structure
-> avec **LiLT** (token classification, checkpoint CORD zero-shot, licence MIT) — chacun dans
-> son sidecar Python, activés par `MOTEUR_OCR=paddleocr` et `MOTEUR_COLLECTE=lilt` (voir
-> [`packages/condensation`](packages/condensation) et [`packages/collecte`](packages/collecte)
-> pour installer les venvs ; sans eux, les moteurs **factices** restent le défaut en
-> développement). Le fine-tuning maison a livré : `outils/` engendre un jeu de reçus québécois
+> **État actuel :** la Condensation lit avec **PP-OCRv5** et la Collecte structure avec **LiLT**
+> (token classification), les deux exportés en **ONNX** et exécutés dans les ouvriers Node :
+> `MOTEUR_OCR=onnx` et `MOTEUR_COLLECTE=onnx`, sans aucun Python. Les sidecars Python d'origine
+> restent disponibles en développement (`paddleocr`, `lilt`) pour comparer au banc ; voir
+> [`packages/condensation`](packages/condensation) et [`packages/collecte`](packages/collecte).
+> Sans moteur choisi, les moteurs **factices** restent le défaut en développement. Le fine-tuning maison a livré : `outils/` engendre un jeu de reçus québécois
 > synthétiques annotés puis entraîne le modèle que la Collecte charge — voir
 > [outils/README.md](outils/README.md).
 
@@ -352,24 +352,24 @@ npm run check:fix
 
 ## Déploiement
 
-Alambic tourne dans une image unique — Node, le sidecar OCR et le sidecar d'étiquetage, chacun
-dans son propre venv — construite par Dokploy sur le serveur, depuis le dépôt git.
+Alambic tourne dans une image unique, **sans Python** : Node, et les deux modèles en ONNX que les
+ouvriers exécutent eux-mêmes. Dokploy la construit sur le serveur, depuis le dépôt git. Les
+modèles de l'OCR sont dans le dépôt ; celui de la Collecte descend au build (ci-dessous).
 
-**Plateforme : `linux/amd64` seulement.** PaddlePaddle ne publie pas de roue linux arm64. C'est
-la raison de laisser le serveur construire ; depuis un Mac Apple Silicon il faut
-`docker build --platform linux/amd64 .`, et l'émulation coûte très cher sur une image de cette
-taille.
+**Plateforme : `linux/amd64`**, celle du VPS, et la seule où les temps sont mesurés. Depuis un
+Mac Apple Silicon : `docker build --platform linux/amd64 .`
 
 ### Le modèle de la Collecte
 
-Le checkpoint maison pèse plus d'un Go : il ne se versionne pas et vit sur un bucket compatible
-S3 (OVH Object Storage). L'y déposer :
+Le modèle maison, exporté en ONNX, pèse 190 Mo : il ne se versionne pas et vit sur un bucket
+compatible S3 (OVH Object Storage). L'exporter, puis l'y déposer :
 
 ```bash
+npm run exporter-modele
 npm run publier-modele -- --bucket <nom-du-bucket>
 ```
 
-La commande compresse `outils/entrainement/modeles/lilt-alambic`, refuse d'écraser un objet
+La commande compresse `outils/entrainement/modeles/lilt-alambic-onnx`, refuse d'écraser un objet
 déjà publié — une image de production l'a peut-être déjà consommé — et imprime en sortie la
 ligne `MODELE_URL` à recopier dans Dokploy. Sans `--bucket`, elle le demande aussi, et
 vérifie l'accès avant de compresser : une clé mal tapée se voit tout de suite, pas après
@@ -387,11 +387,27 @@ dépôt n'en lit ni n'en stocke aucune. Un environnement portant déjà `AWS_ACC
 état — rien ne s'écrit sur disque, rien ne dépend du réseau au démarrage, deux répliques sont
 identiques — et ce qui évite qu'une clé S3 traîne sur le serveur.
 
-Une image construite sans `MODELE_URL` embarque à la place le checkpoint public entraîné sur
-CORD, qui travaille en zéro-shot sur un reçu québécois : commode pour un essai, jamais pour la
-production. C'est précisément le genre de panne qui ne se voit pas — le modèle public *charge*
-et rend des factures, simplement moins bien lues — donc le démarrage en `NODE_ENV=production`
-est **refusé** si `MODELE_COLLECTE` n'est pas renseignée.
+Une image construite sans `MODELE_URL` n'a pas de modèle de Collecte : le démarrage en
+`NODE_ENV=production` est **refusé**, plutôt que de laisser passer un service qui rendrait des
+factures sans les comprendre. Une archive qui ne vient pas de `exporter-modele` (un checkpoint
+PyTorch, par exemple) est refusée de même : `MOTEUR_COLLECTE=onnx` exige un `modele.onnx`.
+
+### La bascule sans Python
+
+Le déploiement qui passe à cette image change trois choses ensemble, dans Dokploy :
+
+1. **Build-time Arguments** : `MODELE_URL` d'une archive publiée depuis `lilt-alambic-onnx`.
+2. **Environment Settings** : `MOTEUR_OCR=onnx` et `MOTEUR_COLLECTE=onnx`. L'image n'ayant
+   plus de Python, `paddleocr` ou `lilt` y refusent le démarrage, avec un message qui le dit.
+3. Les clés des sidecars (`PORT_SIDECAR_*`, `DELAI_OCR_MS`, `DELAI_COLLECTE_MS`,
+   `DETECTION_OCR`, `CHEMIN_PYTHON_*`) n'ont plus d'effet et peuvent être retirées.
+
+Un démarrage refusé déclenche le retour en arrière automatique de Swarm (Dokploy crée le service
+avec `UpdateConfig.FailureAction: rollback`) : l'ancien conteneur, **avec l'ancien
+environnement**, reprend le service. Les logs montrent alors des clés « manquantes » pourtant
+saisies dans le tableau de bord ; `docker service inspect <service> --format
+'{{.UpdateStatus.State}}'` rend `rollback_completed`. Après
+la bascule, relever `condensationMs` et `collecteMs` sur la ligne « Distillation » des logs.
 
 ### Réglages Dokploy
 
@@ -422,24 +438,15 @@ secret partagé `ALAMBIC_CLE` dans l'en-tête `x-cle-alambic`.
 
 ### Dimensionnement
 
-Trois valeurs du gabarit de production sont le résultat de mesures, et non des défauts. Le
+Deux valeurs du gabarit de production sont le résultat de mesures, et non des défauts. Le
 gabarit les donne sans les justifier — voici pourquoi elles valent ce qu'elles valent.
 
-`OUVRIERS=2`, et non le défaut (un de moins que de cœurs) : le sidecar OCR sert une seule
-instance sous verrou, et l'OCR pèse plus de 95 % d'une distillation. Au-delà de deux ouvriers, le
-troisième attend derrière les autres et finit en 504 — ce sont des délais qu'on ajoute, pas du
-débit. **Ne remonter que si le `condensationMs` maximum des logs reste bien sous 10 s** — le
-tableau de bord de [Surveillance](#surveillance) le donne directement.
-
-`DETECTION_OCR=mobile`, et non `server` : mesuré sur le corpus, `server` coûte 4 à 6× la latence
-de `mobile` (16 s la photo simple, 83 s la plus dense) et dépasse `DELAI_OCR_MS`. Le garder
-demanderait de pousser `DELAI_DISTILLATION_MS` au-delà de 85 s.
-
-`FILS_OCR`, vide, vaut un thread par cœur : sans réglage, Paddle en prend 10 quel que soit le
-nombre de cœurs, plus que les 6 du VPS. Les deux sidecars se partagent pourtant ces cœurs dès que
-deux ouvriers sont à des étapes différentes. **Le partage (essai : `FILS_OCR=4`,
-`FILS_COLLECTE=2`) se décide sur le `condensationMs` et le `collecteMs` des logs**, pas sur le
-poste : Paddle n'utilise qu'un cœur sur macOS.
+`OUVRIERS=2` : chaque ouvrier a désormais ses propres sessions ONNX, sans verrou partagé, et
+`FILS_OCR` comme `FILS_COLLECTE` sont des budgets de threads **partagés** entre les ouvriers
+(6 cœurs et 2 ouvriers : 3 threads chacun). Monter `OUVRIERS` ajoute du débit tant que les
+cœurs suivent, au prix d'une copie des modèles par ouvrier (environ 200 Mo). **Ne monter qu'après
+avoir relevé `condensationMs` et `collecteMs` sur le VPS** — le tableau de bord de
+[Surveillance](#surveillance) les donne directement.
 
 `TAILLE_MAX_IMAGE=15728640` (15 Mo), plus large que la limite de photo de profil de YieldMomo
 (10 Mo) : une photo prise au grand-angle d'un iPhone récent dépasse régulièrement les 10 Mo, et

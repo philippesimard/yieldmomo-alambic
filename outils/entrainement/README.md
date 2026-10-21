@@ -113,6 +113,30 @@ tire de ses reconnaisseurs, et deux sources pour un même champ se contrediraien
 sache laquelle croire. Les brancher est un travail à part, à faire avec une mesure sous les
 yeux.
 
+## Exporter en ONNX
+
+```bash
+npm run exporter-modele
+```
+
+Lit `modeles/lilt-alambic`, écrit `modeles/lilt-alambic-onnx` : le dossier que charge le moteur
+`onnx` de la Collecte (`MOTEUR_COLLECTE=onnx`, `MODELE_COLLECTE` sur ce dossier). Trois
+réductions, puis un contrôle :
+
+| Étape | Effet | Pourquoi ainsi |
+|---|---|---|
+| Vocabulaire réduit aux 112 403 jetons écrits en caractères que l'OCR sait rendre | embeddings ÷ 2,2 | le texte lu ne contient que ces caractères : aucun autre jeton ne peut servir, le découpage est **identique** |
+| Export ONNX | parité 100 % | |
+| Poids sur 8 bits : multiplications (MatMulNBits, calculs en flottant) et embeddings | 1,1 Go → 190 Mo | quantifier aussi les activations (quantification dynamique) coûte 3 points de parité ; 4 bits en coûtent 2 |
+
+Le contrôle rejoue les mots réellement lus au banc (`outils/jeu/banc-test/sorties` et
+`corpus/sorties`) : chaque mot doit recevoir l'étiquette de PyTorch dans au moins 99,5 % des
+cas, sinon rien n'est écrit (mesuré : 99,75 %). `--sans-reduction` et `--sans-quantification`
+isolent le coût de chaque étape.
+
+Une réduction du vocabulaire aux seuls jetons du jeu synthétique (7 840) a été essayée : elle
+découpe autrement les mots réels jamais vus et coûte 1,4 point de parité.
+
 ## Publier
 
 Le checkpoint pèse plus d'un Go : il est gitignoré, et l'image ne peut donc pas le prendre dans

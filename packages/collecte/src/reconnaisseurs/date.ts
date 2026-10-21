@@ -12,7 +12,9 @@ const FACTEUR_DATE_AMBIGUE = 0.6
 // annees : c'est ce qui permet de trancher « 26/09/02 » entre 2026-09-02 et 2002-09-26.
 const ANS_PLAUSIBLES = 3
 
-const ISO = /\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b/
+// L'ocr colle parfois l'heure a la date (« 2026-08-2722:04:07 ») : le jour peut alors etre suivi
+// directement d'une heure.
+const ISO = /\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})(?:\b|(?=\d{1,2}:\d{2}))/
 const JOUR_MOIS_ANNEE = /\b(\d{1,2})[-/.](\d{1,2})[-/.](20\d{2}|\d{2})\b/
 const JOUR_MOIS_ECRIT_ANNEE = /\b(\d{1,2})(?:er)?[\s-]+([a-z]+)\.?[\s-]+(20\d{2})\b/
 const MOIS_ECRIT_JOUR_ANNEE = /\b([a-z]+)\.?[\s-]+(\d{1,2}),?[\s-]+(20\d{2})\b/

@@ -8,6 +8,8 @@
 //   npm run banc:collecte -- corpus
 //   npm run banc:collecte -- corpus --moteur factice
 //   npm run banc:collecte -- corpus --moteur-ocr factice
+//   npm run banc:collecte -- corpus --moteur-ocr onnx
+//   npm run banc:collecte -- corpus --moteur-ocr onnx --moteur onnx   (sans aucun Python)
 //   npm run banc:collecte -- corpus --modele <checkpoint-hf>
 //
 // Sans --modele, le banc juge le modele maison (outils/entrainement/modeles/lilt-alambic)
@@ -20,6 +22,7 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
+import { availableParallelism } from 'node:os'
 import { basename, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
@@ -28,6 +31,7 @@ import {
   boiteNormalisee,
   collecter,
   creerMoteurLilt,
+  creerMoteurLiltOnnx,
   ETIQUETTE,
   type MotEtiquete,
   type MoteurEtiquetage,
@@ -37,6 +41,7 @@ import {
 } from '@alambic/collecte'
 import {
   condenser,
+  creerMoteurOnnx,
   creerMoteurPaddle,
   type MoteurOcr,
   moteurFactice,
@@ -55,8 +60,8 @@ import {
 const EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.avif', '.tif', '.tiff'])
 const DOSSIER_SORTIES = 'sorties'
 
-const NOM_MOTEUR_OCR = { factice: 'factice', paddleocr: 'paddleocr' } as const
-const NOM_MOTEUR_COLLECTE = { factice: 'factice', lilt: 'lilt' } as const
+const NOM_MOTEUR_OCR = { factice: 'factice', onnx: 'onnx', paddleocr: 'paddleocr' } as const
+const NOM_MOTEUR_COLLECTE = { factice: 'factice', lilt: 'lilt', onnx: 'onnx' } as const
 
 // 3102 est deja le port du banc de condensation : les deux bancs peuvent tourner cote a cote
 // avec un `npm run dev` (3101, 3103) sans se marcher dessus.
@@ -66,6 +71,9 @@ const PORT_BANC_COLLECTE = 3104
 const MODELE_MAISON = fileURLToPath(new URL('entrainement/modeles/lilt-alambic', import.meta.url))
 const MODELE_PUBLIC = 'doc2txt/tst_lilt_cord_xlm_ft'
 const MODELE_PAR_DEFAUT = existsSync(MODELE_MAISON) ? MODELE_MAISON : MODELE_PUBLIC
+const MODELE_MAISON_ONNX = fileURLToPath(
+  new URL('entrainement/modeles/lilt-alambic-onnx', import.meta.url),
+)
 
 const DELAI_LECTURE_MS = 60_000
 const DELAI_ETIQUETAGE_MS = 60_000
@@ -95,12 +103,23 @@ const { values, positionals } = parseArgs({
 })
 
 const moteurOcrChoisi = values['moteur-ocr']
-if (moteurOcrChoisi !== NOM_MOTEUR_OCR.factice && moteurOcrChoisi !== NOM_MOTEUR_OCR.paddleocr) {
-  process.stdout.write(`Moteur ocr inconnu : ${moteurOcrChoisi}. Choisir factice ou paddleocr.\n`)
+if (
+  moteurOcrChoisi !== NOM_MOTEUR_OCR.factice &&
+  moteurOcrChoisi !== NOM_MOTEUR_OCR.onnx &&
+  moteurOcrChoisi !== NOM_MOTEUR_OCR.paddleocr
+) {
+  process.stdout.write(
+    `Moteur ocr inconnu : ${moteurOcrChoisi}. Choisir factice, onnx ou paddleocr.\n`,
+  )
   process.exit(1)
 }
-if (values.moteur !== NOM_MOTEUR_COLLECTE.factice && values.moteur !== NOM_MOTEUR_COLLECTE.lilt) {
-  process.stdout.write(`Moteur inconnu : ${values.moteur}. Choisir factice ou lilt.\n`)
+const moteurCollecteChoisi = values.moteur
+if (
+  moteurCollecteChoisi !== NOM_MOTEUR_COLLECTE.factice &&
+  moteurCollecteChoisi !== NOM_MOTEUR_COLLECTE.lilt &&
+  moteurCollecteChoisi !== NOM_MOTEUR_COLLECTE.onnx
+) {
+  process.stdout.write(`Moteur inconnu : ${moteurCollecteChoisi}. Choisir factice, lilt ou onnx.\n`)
   process.exit(1)
 }
 
@@ -117,18 +136,36 @@ if (photos.length === 0) {
 const sorties = join(dossier, DOSSIER_SORTIES)
 await mkdir(sorties, { recursive: true })
 
-const moteurOcr: MoteurOcr =
-  moteurOcrChoisi === NOM_MOTEUR_OCR.factice
-    ? moteurFactice
-    : creerMoteurPaddle({ url: `http://127.0.0.1:${PORT_BANC_OCR}`, delaiMs: DELAI_LECTURE_MS })
+const MOTEURS_OCR: Record<typeof moteurOcrChoisi, MoteurOcr> = {
+  [NOM_MOTEUR_OCR.factice]: moteurFactice,
+  // Le banc lit une photo a la fois : le moteur peut prendre tous les coeurs.
+  [NOM_MOTEUR_OCR.onnx]: creerMoteurOnnx({ fils: availableParallelism() }),
+  [NOM_MOTEUR_OCR.paddleocr]: creerMoteurPaddle({
+    url: `http://127.0.0.1:${PORT_BANC_OCR}`,
+    delaiMs: DELAI_LECTURE_MS,
+  }),
+}
+const moteurOcr = MOTEURS_OCR[moteurOcrChoisi]
 
-const moteurCollecte: MoteurEtiquetage =
-  values.moteur === NOM_MOTEUR_COLLECTE.factice
-    ? moteurFacticeEtiquetage
-    : creerMoteurLilt({
-        url: `http://127.0.0.1:${PORT_BANC_COLLECTE}`,
-        delaiMs: DELAI_ETIQUETAGE_MS,
-      })
+// Le modele exporte par `npm run exporter-modele` quand le moteur est onnx, le checkpoint
+// PyTorch sinon.
+const modele =
+  moteurCollecteChoisi === NOM_MOTEUR_COLLECTE.onnx && values.modele === MODELE_PAR_DEFAUT
+    ? MODELE_MAISON_ONNX
+    : String(values.modele)
+
+const MOTEURS_COLLECTE: Record<typeof moteurCollecteChoisi, MoteurEtiquetage> = {
+  [NOM_MOTEUR_COLLECTE.factice]: moteurFacticeEtiquetage,
+  [NOM_MOTEUR_COLLECTE.lilt]: creerMoteurLilt({
+    url: `http://127.0.0.1:${PORT_BANC_COLLECTE}`,
+    delaiMs: DELAI_ETIQUETAGE_MS,
+  }),
+  [NOM_MOTEUR_COLLECTE.onnx]: creerMoteurLiltOnnx({
+    dossier: modele,
+    fils: availableParallelism(),
+  }),
+}
+const moteurCollecte = MOTEURS_COLLECTE[moteurCollecteChoisi]
 
 // Le banc a besoin des mots etiquetes pour l'export annotable, mais `collecter` ne rend que la
 // facture : ce moteur-greffier enregistre au passage ce que le vrai moteur repond, sans
@@ -160,20 +197,14 @@ if (moteurOcrChoisi === NOM_MOTEUR_OCR.paddleocr) {
     ),
   )
 }
-if (values.moteur === NOM_MOTEUR_COLLECTE.lilt) {
+if (moteurCollecteChoisi === NOM_MOTEUR_COLLECTE.lilt) {
   sidecars.push(
     await demarrerSidecar(
       'collecte',
       pythonDe('collecte'),
       PORT_BANC_COLLECTE,
       SIDECAR_LILT.routeSante,
-      [
-        SIDECAR_LILT.chemin,
-        '--port',
-        String(PORT_BANC_COLLECTE),
-        '--modele',
-        String(values.modele),
-      ],
+      [SIDECAR_LILT.chemin, '--port', String(PORT_BANC_COLLECTE), '--modele', modele],
     ),
   )
 }
@@ -305,7 +336,7 @@ async function exporter(
     modele: moteurCollecte.nom,
     // Le moteur seul ne dit pas quel checkpoint a etiquete : deux exports se comparent mal
     // sans le savoir.
-    checkpoint: values.moteur === NOM_MOTEUR_COLLECTE.lilt ? values.modele : null,
+    checkpoint: moteurCollecteChoisi === NOM_MOTEUR_COLLECTE.factice ? null : modele,
     mots: dernierEtiquetage.map((mot) => ({
       texte: mot.texte,
       boite: boiteNormalisee(mot.cadre, image.largeur, image.hauteur),
@@ -390,6 +421,6 @@ function afficher(passages: readonly Passage[]) {
   const reussis = passages.filter((p) => p.verdict === STATUT_ETAPE.reussi)
   const moyenne = reussis.reduce((somme, p) => somme + p.totalMs, 0) / (reussis.length || 1)
   process.stdout.write(
-    `\n${reussis.length}/${passages.length} collectees (ocr ${moteurOcr.nom}, collecte ${moteurCollecte.nom}${values.moteur === NOM_MOTEUR_COLLECTE.lilt ? ` : ${values.modele}` : ''}), ${moyenne.toFixed(0)} ms en moyenne. Exports dans ${sorties}/\n`,
+    `\n${reussis.length}/${passages.length} collectees (ocr ${moteurOcr.nom}, collecte ${moteurCollecte.nom}${moteurCollecteChoisi === NOM_MOTEUR_COLLECTE.factice ? '' : ` : ${modele}`}), ${moyenne.toFixed(0)} ms en moyenne. Exports dans ${sorties}/\n`,
   )
 }

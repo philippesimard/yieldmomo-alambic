@@ -1,12 +1,15 @@
+import { availableParallelism } from 'node:os'
 import { chauffer, SOUS_ETAPES_CHAUFFE } from '@alambic/chauffe'
 import {
   collecter,
   creerMoteurLilt,
+  creerMoteurLiltOnnx,
   moteurFacticeEtiquetage,
   SOUS_ETAPES_COLLECTE,
 } from '@alambic/collecte'
 import {
   condenser,
+  creerMoteurOnnx,
   creerMoteurPaddle,
   moteurFactice,
   SOUS_ETAPES_CONDENSATION,
@@ -19,6 +22,11 @@ import { env, MOTEUR_COLLECTE, MOTEUR_OCR } from './config/env'
 // le meme choix, et la config est le seul endroit qui parle aux deux.
 const MOTEURS_OCR = {
   [MOTEUR_OCR.factice]: moteurFactice,
+  // Chaque ouvrier a ses sessions : le budget de threads se partage entre eux, sans quoi deux
+  // ouvriers prendraient chacun tous les coeurs.
+  [MOTEUR_OCR.onnx]: creerMoteurOnnx({
+    fils: Math.max(1, Math.floor(env.FILS_OCR / env.OUVRIERS)),
+  }),
   [MOTEUR_OCR.paddleocr]: creerMoteurPaddle({
     url: `http://127.0.0.1:${env.PORT_SIDECAR_OCR}`,
     delaiMs: env.DELAI_OCR_MS,
@@ -32,6 +40,11 @@ const MOTEURS_ETIQUETAGE = {
   [MOTEUR_COLLECTE.lilt]: creerMoteurLilt({
     url: `http://127.0.0.1:${env.PORT_SIDECAR_COLLECTE}`,
     delaiMs: env.DELAI_COLLECTE_MS,
+  }),
+  // Comme pour l'ocr : chaque ouvrier a sa session, le budget de threads se partage entre eux.
+  [MOTEUR_COLLECTE.onnx]: creerMoteurLiltOnnx({
+    dossier: env.MODELE_COLLECTE,
+    fils: Math.max(1, Math.floor((env.FILS_COLLECTE ?? availableParallelism()) / env.OUVRIERS)),
   }),
 } as const
 

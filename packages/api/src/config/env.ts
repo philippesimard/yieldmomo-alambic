@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ENVIRONNEMENT } from '@alambic/noyau'
 import { config } from 'dotenv'
@@ -11,6 +12,7 @@ config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quie
 
 export const MOTEUR_OCR = {
   factice: 'factice',
+  onnx: 'onnx',
   paddleocr: 'paddleocr',
 } as const
 
@@ -26,6 +28,7 @@ export type DetectionOcr = (typeof DETECTION_OCR)[keyof typeof DETECTION_OCR]
 export const MOTEUR_COLLECTE = {
   factice: 'factice',
   lilt: 'lilt',
+  onnx: 'onnx',
 } as const
 
 export type MoteurCollecteConfigure = (typeof MOTEUR_COLLECTE)[keyof typeof MOTEUR_COLLECTE]
@@ -46,6 +49,9 @@ const CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT = fileURLToPath(
 // travaille donc en zero-shot sur un recu quebecois. Defaut de developpement seulement — en
 // production le modele maison est exige, voir le controle plus bas.
 const MODELE_COLLECTE_PAR_DEFAUT = 'doc2txt/tst_lilt_cord_xlm_ft'
+
+// Le fichier que le moteur onnx de la Collecte charge dans son dossier de modele.
+const FICHIER_MODELE_ONNX = 'modele.onnx'
 
 // Un ouvrier de moins que de coeurs : le thread principal doit garder de quoi accepter les
 // requetes et rendre les reponses, sinon la latence grimpe alors meme que le debit plafonne.
@@ -103,9 +109,10 @@ const EnvSchema = z
     DELAI_OCR_MS: z.coerce.number().int().positive().default(20_000),
     CHEMIN_PYTHON_OCR: z.string().default(CHEMIN_PYTHON_PAR_DEFAUT),
     DETECTION_OCR: z.enum(DETECTION_OCR).default(DETECTION_OCR.mobile),
-    // Threads de calcul du sidecar ocr. Paddle en prend 10 par defaut, plus que les 6 coeurs
-    // du VPS : il se marche dessus avant meme que la collecte tourne a cote. Le partage des
-    // coeurs entre les deux sidecars se decide a la mesure, sur la ligne « Distillation ».
+    // Threads de calcul de l'ocr. Paddle en prend 10 par defaut, plus que les 6 coeurs du VPS :
+    // il se marche dessus avant meme que la collecte tourne a cote. Avec le moteur onnx, c'est
+    // le budget de tous les ouvriers, partage entre eux. Le partage des coeurs se decide a la
+    // mesure, sur la ligne « Distillation ».
     FILS_OCR: z.coerce.number().int().positive().default(availableParallelism()),
     // Optionnelle en developpement (defaut factice, applique plus bas) pour qu'un clone frais
     // demarre sans python ; exigee en production, ou un service tournant en silence au moteur
@@ -115,8 +122,8 @@ const EnvSchema = z
     PORT_SIDECAR_COLLECTE: z.coerce.number().int().positive().default(3103),
     DELAI_COLLECTE_MS: z.coerce.number().int().positive().default(6_000),
     CHEMIN_PYTHON_COLLECTE: z.string().default(CHEMIN_PYTHON_COLLECTE_PAR_DEFAUT),
-    // Threads de calcul du sidecar d'etiquetage. Absente : le defaut de torch, un par coeur
-    // physique.
+    // Threads de calcul de l'etiquetage. Absente : le defaut de torch, un par coeur physique, pour
+    // le sidecar ; un par coeur, partage entre les ouvriers, pour le moteur onnx.
     FILS_COLLECTE: z.coerce.number().int().positive().optional(),
     // Optionnelle en developpement (defaut public, applique plus bas) ; exigee en production,
     // ou le checkpoint public rendrait des factures moins bien lues sans que rien ne le dise.
@@ -169,7 +176,7 @@ const EnvSchema = z
         code: 'custom',
         path: ['MOTEUR_OCR'],
         message:
-          'MOTEUR_OCR est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `paddleocr`.',
+          'MOTEUR_OCR est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `onnx` ou `paddleocr`.',
       })
     }
 
@@ -178,7 +185,7 @@ const EnvSchema = z
         code: 'custom',
         path: ['MOTEUR_COLLECTE'],
         message:
-          'MOTEUR_COLLECTE est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `lilt`.',
+          'MOTEUR_COLLECTE est requise en production : sans elle, le service pourrait tourner au moteur factice et rendre des factures inventees. Choisir `onnx` ou `lilt`.',
       })
     }
 
@@ -206,6 +213,40 @@ const EnvSchema = z
         code: 'custom',
         path: ['MODELE_COLLECTE'],
         message: `Dossier de checkpoint introuvable : ${valeurs.MODELE_COLLECTE}`,
+      })
+    }
+
+    // Un moteur Python sans son interpreteur ne demarrerait jamais : le superviseur le relancerait
+    // cinq fois, puis /ready resterait en 503 sans dire pourquoi. C'est le cas de l'image docker,
+    // qui n'embarque plus de Python.
+    if (valeurs.MOTEUR_OCR === MOTEUR_OCR.paddleocr && !existsSync(valeurs.CHEMIN_PYTHON_OCR)) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['MOTEUR_OCR'],
+        message: `MOTEUR_OCR=paddleocr demande un interpreteur Python, introuvable : ${valeurs.CHEMIN_PYTHON_OCR}. Choisir \`onnx\`.`,
+      })
+    }
+    if (
+      valeurs.MOTEUR_COLLECTE === MOTEUR_COLLECTE.lilt &&
+      !existsSync(valeurs.CHEMIN_PYTHON_COLLECTE)
+    ) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['MOTEUR_COLLECTE'],
+        message: `MOTEUR_COLLECTE=lilt demande un interpreteur Python, introuvable : ${valeurs.CHEMIN_PYTHON_COLLECTE}. Choisir \`onnx\`.`,
+      })
+    }
+
+    // Le moteur onnx ne lit qu'un dossier ecrit par `npm run exporter-modele` : un identifiant
+    // hugging face ou un checkpoint PyTorch le ferait echouer a la premiere facture seulement.
+    if (
+      valeurs.MOTEUR_COLLECTE === MOTEUR_COLLECTE.onnx &&
+      !existsSync(join(valeurs.MODELE_COLLECTE ?? '', FICHIER_MODELE_ONNX))
+    ) {
+      contexte.addIssue({
+        code: 'custom',
+        path: ['MODELE_COLLECTE'],
+        message: `MOTEUR_COLLECTE=onnx demande un dossier exporte par \`npm run exporter-modele\` (avec ${FICHIER_MODELE_ONNX}) : ${valeurs.MODELE_COLLECTE ?? 'absent'}`,
       })
     }
   })

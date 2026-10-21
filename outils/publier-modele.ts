@@ -1,6 +1,6 @@
-// Compresse le checkpoint de la Collecte et le televerse sur un bucket compatible S3 (OVH
-// Object Storage). C'est la seule facon de faire entrer le modele maison dans l'image : il
-// pese plus d'un Go et ne se versionne pas.
+// Compresse le modele de la Collecte et le televerse sur un bucket compatible S3 (OVH Object
+// Storage). C'est la seule facon de faire entrer le modele maison dans l'image : exporte en
+// ONNX (`npm run exporter-modele`), il pese encore 190 Mo et ne se versionne pas.
 //
 //   npm run publier-modele -- --bucket alambic-modeles
 //
@@ -36,7 +36,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 const RACINE = resolve(fileURLToPath(import.meta.url), '../..')
 
-const MODELE_PAR_DEFAUT = join(RACINE, 'outils/entrainement/modeles/lilt-alambic')
+// Le modele exporte en ONNX : c'est lui que l'image embarque depuis la bascule sans Python.
+const MODELE_PAR_DEFAUT = join(RACINE, 'outils/entrainement/modeles/lilt-alambic-onnx')
 
 // Beauharnois : le meme datacentre que les vps, donc un transfert interne a ovh.
 const ENDPOINT_PAR_DEFAUT = 'https://s3.bhs.io.cloud.ovh.net'

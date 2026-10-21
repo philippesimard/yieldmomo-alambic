@@ -33,12 +33,20 @@ La *reconstruction* et les *reconnaisseurs* restent des fonctions pures : mêmes
 résultats, vérifiables avec un condensat écrit à la main. Seul l'étiquetage est asynchrone, et
 il est **injecté** — exactement le patron `MoteurOcr` de la Condensation.
 
-## Deux moteurs
+## Trois moteurs
 
 | Moteur | Ce qu'il fait |
 |---|---|
 | `factice` | Étiquette le montant de la dernière ligne marquée « total », rien d'autre. Aucune dépendance ; le mode dev traverse le même chemin de reconstruction que le vrai moteur. |
 | `lilt` | Sidecar Python (port 3103) : LiLT (Language-Independent Layout Transformer) sur XLM-RoBERTa en token classification, checkpoint `doc2txt/tst_lilt_cord_xlm_ft`, zero-shot. Texte + géométrie, sans les pixels. |
+| `onnx` | Le même modèle exporté par `npm run exporter-modele`, exécuté par `onnxruntime-node` **dans l'ouvrier** ([`src/onnx/`](src/onnx)) : ni sidecar, ni Python. `MODELE_COLLECTE` pointe le dossier exporté. |
+
+Le moteur `onnx` découpe chaque mot avec `@huggingface/tokenizers`, le portage en JavaScript des
+tokenizers de Hugging Face : sur les 8 997 mots distincts lus au banc, le découpage est identique
+à celui de Python, normalisation SentencePiece comprise. Les fenêtres (512 jetons, 128 repris,
+premier jeton de chaque mot) reproduisent `return_overflowing_tokens` de transformers
+([`fenetres.ts`](src/onnx/fenetres.ts)). Sur les 24 391 mots du banc, 99,88 % reçoivent
+l'étiquette du sidecar PyTorch, en 0,13 s par reçu au lieu de 0,7 s.
 
 Le sidecar est volontairement bête : il reçoit `{ mots: [{texte, boite 0–1000}] }` et rend
 une étiquette et un score par mot. L'image ne transite pas : LiLT ne lit que le texte et la

@@ -63,6 +63,10 @@ const COLONNES = [...CHAMPS_SIMPLES, 'taxes', 'articles'] as const
 // les trois doivent etre justes, sinon le drapeau ment.
 const CHAMPS_DU_BILAN = ['sousTotal', 'total', 'taxes'] as const
 
+// YieldMomo n'affiche pas les articles : l'indicateur qui compte, celui que l'utilisateur
+// ressent, est la facture juste sur tout ce qu'il voit.
+const CHAMPS_NON_AFFICHES: readonly string[] = ['articles']
+
 // Combien de factures dans chaque etat, et combien des coherentes le sont a raison.
 type BilanCoherence = Record<Coherence, number> & { justes: number }
 
@@ -72,6 +76,8 @@ type Resume = {
   checkpoints: string[]
   photos: number
   facturesJustes: number
+  // Justes sur tous les champs affiches a l'utilisateur.
+  facturesJustesAffichees: number
   champs: Record<string, Compte>
   verdicts: Record<string, Record<string, Verdict>>
   // Absente des exports d'avant le solveur.
@@ -128,6 +134,9 @@ for (const fichier of exports_.sort()) {
 afficher(notes)
 
 const resume = resumer(notes, checkpoints, coherences)
+process.stdout.write(
+  `${resume.facturesJustesAffichees}/${resume.photos} factures justes sur les champs affiches, ${resume.facturesJustes}/${resume.photos} articles compris\n`,
+)
 if (resume.coherence !== undefined) {
   process.stdout.write(`${texteCoherence(resume.coherence)}\n`)
 }
@@ -161,6 +170,7 @@ function resumer(
     checkpoints: [...checkpoints].sort(),
     photos: notes.size,
     facturesJustes,
+    facturesJustesAffichees: justesAffichees(verdicts),
     champs,
     verdicts,
     coherence: coherences.size === 0 ? undefined : bilanCoherence(notes, coherences),
@@ -217,6 +227,9 @@ function comparer(resume: Resume, reference: Resume): boolean {
     )
   }
   process.stdout.write(
+    `  factures justes sur les champs affiches ${justesAffichees(reference.verdicts)} → ${resume.facturesJustesAffichees} sur ${resume.photos}\n`,
+  )
+  process.stdout.write(
     `  factures entierement justes ${reference.facturesJustes} → ${resume.facturesJustes} sur ${resume.photos}\n`,
   )
   if (reference.coherence !== undefined) {
@@ -237,6 +250,15 @@ function comparer(resume: Resume, reference: Resume): boolean {
   }
   process.stdout.write(recul ? '\nRecul : au moins un champ perd.\n' : '\nAucun recul.\n')
   return recul
+}
+
+// Calcule depuis les verdicts, pour qu'une reference figee avant cet indicateur le donne aussi.
+function justesAffichees(verdicts: Record<string, Record<string, Verdict>>): number {
+  return Object.values(verdicts).filter((champs) =>
+    Object.entries(champs).every(
+      ([nom, verdict]) => CHAMPS_NON_AFFICHES.includes(nom) || estJuste(verdict),
+    ),
+  ).length
 }
 
 function estJuste(verdict: Verdict): boolean {
