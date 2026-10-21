@@ -2,7 +2,12 @@ import { CODE_ERREUR, ENVIRONNEMENT, ErreurAlambic } from '@alambic/noyau'
 import helmet from '@fastify/helmet'
 import multipart from '@fastify/multipart'
 import limiteDebit from '@fastify/rate-limit'
-import Fastify, { type FastifyError, LogController, type preHandlerAsyncHookHandler } from 'fastify'
+import Fastify, {
+  type FastifyError,
+  type FastifyRequest,
+  LogController,
+  type preHandlerAsyncHookHandler,
+} from 'fastify'
 import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
@@ -19,6 +24,14 @@ import { routeSante } from './routes/sante'
 
 // Filet global contre le martelage. La route de distillation resserre la maille par-dessus.
 const LIMITE_GLOBALE = { max: 100, timeWindow: '1 minute' }
+
+// Les logs de requete sont desactives (voir logController plus bas) : la ligne d'erreur est donc
+// la seule trace qu'il reste d'une requete refusee. Sans ces trois champs, un balayage
+// automatise sur des chemins inexistants et un pipeline sature s'ecrivent exactement pareil, et
+// il n'y a plus rien dans le conteneur pour les departager apres coup.
+function traceAppelant(requete: FastifyRequest) {
+  return { methode: requete.method, url: requete.url, ip: requete.ip }
+}
 
 export async function construireServeur() {
   const app = Fastify({
@@ -68,6 +81,12 @@ export async function construireServeur() {
   // controle anti-CSRF non plus : il protege un cookie de session, et il n'y en a aucun ici.
 
   app.setErrorHandler<FastifyError>((erreur, requete, reponse) => {
+    // Le chemin demande n'existe pas : c'est le gestionnaire de route inconnue qui refuse, et
+    // la limitation de debit rebranchee dessus avec lui. Rien n'a touche le pipeline. Les deux
+    // sortaient sous le meme « Distillation refusee », si bien qu'une rafale de balayage se
+    // lisait comme des distillations en echec — et noyait les vraies, cent fois plus rares.
+    const routeInconnue = requete.is404
+
     if (erreur instanceof ErreurAlambic) {
       // Un refus attendu (image illisible, surcharge) n'est pas une panne : il se journalise
       // en avertissement, sinon le vrai bruit se noie dans le bruit ordinaire.
@@ -80,8 +99,14 @@ export async function construireServeur() {
       // seul se tait — c'est aussi le seul dont le message soit construit ailleurs qu'ici.
       const panne = erreur.code === CODE_ERREUR.erreurInterne
       requete.log[panne ? 'error' : 'warn'](
-        { err: erreur, code: erreur.code, evenement: EVENEMENT.refus },
-        'Distillation refusee',
+        {
+          err: erreur,
+          code: erreur.code,
+          statut: erreur.statut,
+          ...traceAppelant(requete),
+          evenement: routeInconnue ? EVENEMENT.refusRouteInconnue : EVENEMENT.refus,
+        },
+        routeInconnue ? 'Requete refusee sur une route inconnue' : 'Distillation refusee',
       )
       return reponse.code(erreur.statut).send({
         code: erreur.code,
@@ -91,21 +116,27 @@ export async function construireServeur() {
     }
 
     if (hasZodFastifySchemaValidationErrors(erreur)) {
-      requete.log.warn({ err: erreur }, 'Requete invalide')
+      requete.log.warn({ err: erreur, ...traceAppelant(requete) }, 'Requete invalide')
       return reponse
         .code(400)
         .send({ code: CODE_ERREUR.requeteInvalide, message: 'La requete est invalide.' })
     }
 
     if (isResponseSerializationError(erreur)) {
-      requete.log.error({ err: erreur }, 'Reponse non conforme au schema')
+      requete.log.error(
+        { err: erreur, ...traceAppelant(requete) },
+        'Reponse non conforme au schema',
+      )
       return reponse
         .code(500)
         .send({ code: CODE_ERREUR.erreurInterne, message: 'Une erreur interne est survenue.' })
     }
 
     const statut = erreur.statusCode ?? 500
-    requete.log.error({ err: erreur, evenement: EVENEMENT.erreurNonGeree }, 'Erreur non geree')
+    requete.log.error(
+      { err: erreur, statut, ...traceAppelant(requete), evenement: EVENEMENT.erreurNonGeree },
+      'Erreur non geree',
+    )
     return reponse.code(statut).send({
       code: statut >= 500 ? CODE_ERREUR.erreurInterne : CODE_ERREUR.requeteInvalide,
       message: statut >= 500 ? 'Une erreur interne est survenue.' : erreur.message,

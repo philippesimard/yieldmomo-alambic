@@ -23,6 +23,7 @@ const NIVEAU_AVERTISSEMENT = 40
 export const EVENEMENT = {
   distillation: 'distillation',
   refus: 'refus',
+  refusRouteInconnue: 'refusRouteInconnue',
   erreurNonGeree: 'erreurNonGeree',
   cleRefusee: 'cleRefusee',
   atelierDemarre: 'atelierDemarre',
