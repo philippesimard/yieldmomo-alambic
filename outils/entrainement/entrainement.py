@@ -175,7 +175,9 @@ def principal():
     print(f'appareil {appareil} | {len(etiquettes)} etiquettes')
     print(f'{len(entrainement)} recus d entrainement, {len(validation)} de validation')
 
-    tokenizer = XLMRobertaTokenizerFast.from_pretrained(options.base)
+    # Le drapeau du sidecar : la detection Mistral de transformers prend ce tokenizer XLM-R pour un
+    # tokenizer a corriger ; il n'a rien a corriger, et le dire fait taire la fausse alerte.
+    tokenizer = XLMRobertaTokenizerFast.from_pretrained(options.base, fix_mistral_regex=False)
     modele = preparer_modele(
         options.base,
         etiquettes,

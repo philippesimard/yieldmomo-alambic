@@ -39,7 +39,8 @@ def principal():
     options = analyser_arguments()
     appareil = choisir_appareil(options.appareil)
 
-    tokenizer = AutoTokenizer.from_pretrained(options.modele)
+    # Le drapeau du sidecar : voir entrainement.py.
+    tokenizer = AutoTokenizer.from_pretrained(options.modele, fix_mistral_regex=False)
     modele = LiltForTokenClassification.from_pretrained(options.modele).to(appareil)
     # Les etiquettes viennent du checkpoint et non du code : mesurer avec une autre table que
     # celle qu'il a apprise ne dirait rien de juste.

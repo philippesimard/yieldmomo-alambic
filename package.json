@@ -25,6 +25,7 @@
     "preparer-banc-synthetique": "tsx outils/preparer-banc-synthetique.ts",
     "rejeu:categorie": "tsx outils/rejeu-categorie.ts",
     "generer-recus": "tsx outils/python.ts outils/recus/engendrer.py",
+    "condenser-jeu": "tsx outils/recus/condenser-jeu.ts",
     "verifier-boites": "tsx outils/python.ts outils/recus/verifier_boites.py",
     "tester-recus": "tsx outils/python.ts -m pytest outils/recus",
     "entrainer-modele": "tsx outils/python.ts outils/entrainement/entrainement.py",

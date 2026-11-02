@@ -11,21 +11,33 @@ Deux familles cohabitent :
 
 ## Générer → entraîner
 
-Les deux étapes n'en forment qu'une seule chaîne. La première écrit le jeu, la seconde le lit :
+Une seule chaîne, de la génération à la publication :
 
 ```
-recus/          engendre des reçus québécois synthétiques et annotés
-   ↓            jeu/<split>/boxes/*.json — mots, boîtes en pixels, étiquette par mot
-entrainement/   fine-tune LiLT sur ces annotations
-   ↓            entrainement/modeles/lilt-alambic — le checkpoint que le sidecar charge
+recus/                   engendre des reçus québécois synthétiques et annotés
+   ↓                     jeu/<split>/boxes/*.json — mots, boîtes en pixels, étiquette par mot
+recus/condenser-jeu.ts   fait lire chaque reçu par la vraie Chauffe et le vrai OCR
+   ↓                     jeu/ocr/<split>/boxes/*.json — les mots LUS, étiquettes reportées
+entrainement/            fine-tune LiLT sur ces annotations, puis l'exporte en ONNX
+   ↓                     entrainement/modeles/lilt-alambic(-onnx) — ce que la Collecte charge
 ```
 
 ```bash
-npm run generer-recus -- --n 4000 --jobs 4   # écrit outils/jeu/ (~1,4 Go pour 4000 reçus)
-npm run entrainer-modele                     # lit outils/jeu/, écrit entrainement/modeles/
-npm run evaluer-modele -- --split test       # F1 à l'entité sur le split test
-npm run publier-modele -- --bucket <bucket>  # compresse et téléverse sur le bucket S3
+npm run generer-recus -- --n 4000 --jobs 4                 # écrit outils/jeu/ (~1,4 Go)
+npm run condenser-jeu                                      # écrit outils/jeu/ocr/ (~1 h 30)
+npm run entrainer-modele -- --jeu outils/jeu/ocr           # écrit entrainement/modeles/
+npm run evaluer-modele -- --jeu outils/jeu/ocr --split test
+npm run exporter-modele                                    # ONNX, 8 bits, contrôle de parité
+npm run publier-modele -- --bucket <bucket>                # téléverse sur le bucket S3
 ```
+
+**Pourquoi passer par le pipeline.** Le générateur connaît le texte exact et des boîtes de mots
+parfaites ; en service, le modèle reçoit le texte de l'OCR, fautes comprises, et des boîtes
+de mots tirées de lignes. Entraîné sur le premier, il n'a jamais vu le second. `condenser-jeu`
+aligne caractère par caractère le texte imprimé et le texte lu (globalement, puis ligne par
+ligne quand l'OCR a lu dans le désordre un reçu penché), et chaque mot lu prend l'étiquette
+majoritaire de ses caractères. Un reçu dont moins de la moitié des caractères se retrouvent
+(un reçu photographié couché, lu en bouillie) est écarté : il n'apprendrait que du bruit.
 
 Aucune configuration n'est nécessaire : les chemins par défaut sont ancrés sur l'emplacement des
 scripts, pas sur le répertoire courant. Pour mettre le modèle en service :

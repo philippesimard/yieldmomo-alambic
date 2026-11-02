@@ -1,6 +1,8 @@
 import type { BlocTexte, Facture } from '@alambic/noyau'
+import { montantDe } from '../montant'
 import { confianceDe, normaliser, texteDe } from './commun'
 import { porteUneDate } from './date'
+import { enseigneDe } from './enseigne'
 
 // Le haut du ticket seulement : c'est la que s'imprime l'enseigne. Plus bas, on tomberait sur
 // l'adresse, les articles, le pied de ticket. La fenetre depasse la douzaine de lignes parce
@@ -11,6 +13,11 @@ const LIGNES_EXAMINEES = 12
 // L'heuristique reconnait « une ligne qui ressemble a un nom », pas un nom certifie : la
 // confiance en garde la trace.
 const FACTEUR_HEURISTIQUE = 0.7
+
+// Une enseigne du catalogue lue dans le haut du ticket est plus sure qu'une ligne qui ressemble
+// a un nom : un logo mal lu (« ESN ») ressemble a un nom, « MAXI » quatre lignes plus bas est
+// le commerce.
+const FACTEUR_ENSEIGNE = 0.85
 
 const LETTRES_MINIMUM = 3
 
@@ -68,7 +75,21 @@ const NUMERO_CIVIQUE = new RegExp(
 )
 
 export function reconnaitreMarchand(lignes: readonly BlocTexte[][]): Facture['marchand'] {
-  for (const ligne of lignes.slice(0, LIGNES_EXAMINEES)) {
+  const examinees = lignes.slice(0, LIGNES_EXAMINEES)
+  // L'enseigne s'imprime dans l'en-tete, avant le premier montant : plus bas, un mot-cle du
+  // catalogue designe un article (« POUTINE », « PIZZA »), pas le commerce.
+  const premierMontant = examinees.findIndex((ligne) => montantDe(texteDe(ligne)) !== null)
+  const enTete = premierMontant === -1 ? examinees : examinees.slice(0, premierMontant)
+  for (const ligne of enTete) {
+    const texte = texteDe(ligne)
+    const enseigne = enseigneDe(texte)
+    if (enseigne === null) continue
+    // La ligne entiere quand elle se lit comme un nom (« MAXI STE-FOY ») ; l'enseigne seule
+    // quand l'ocr l'a fondue avec l'adresse ou le telephone.
+    const valeur = nommable(texte) && !designeAutreChose(texte) ? texte : enseigne.toUpperCase()
+    return { valeur, confiance: confianceDe(ligne) * FACTEUR_ENSEIGNE }
+  }
+  for (const ligne of examinees) {
     const texte = texteDe(ligne)
     if (!nommable(texte) || designeAutreChose(texte)) continue
     return { valeur: texte, confiance: confianceDe(ligne) * FACTEUR_HEURISTIQUE }

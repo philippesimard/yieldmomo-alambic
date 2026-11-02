@@ -3,7 +3,7 @@
     "lilt-alambic"
   ],
   "photos": 26,
-  "facturesJustes": 12,
+  "facturesJustes": 11,
   "champs": {
     "marchand": {
       "juste": 21,
@@ -20,8 +20,8 @@
     "devise": {
       "juste": 25,
       "faux": 0,
-      "manquant": 0,
-      "vide": 1
+      "manquant": 1,
+      "vide": 0
     },
     "sousTotal": {
       "juste": 14,
@@ -142,7 +142,7 @@
     "Image 16.jpeg": {
       "marchand": "juste",
       "date": "juste",
-      "devise": "vide",
+      "devise": "manquant",
       "sousTotal": "juste",
       "total": "juste",
       "carte": "juste",

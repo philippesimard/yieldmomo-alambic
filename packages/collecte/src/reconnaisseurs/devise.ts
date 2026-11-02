@@ -33,6 +33,14 @@ const FACTEUR_SYMBOLE = 0.7
 // confiance reste basse.
 const FACTEUR_DOLLAR_SEUL = 0.4
 
+// Beaucoup de recus quebecois n'impriment aucun symbole. Une taxe canadienne nommee, un code
+// postal canadien ou un numero d'inscription aux taxes (« RT0001 », « TQ0001 ») disent pourtant
+// le pays, et donc la devise. Deduite plutot que lue : la confiance le garde.
+const FACTEUR_CONTEXTE_CANADIEN = 0.6
+const TAXE_CANADIENNE = /\b(T\.?P\.?S|T\.?V\.?Q|GST|QST|HST|TVH)\b/i
+const CODE_POSTAL_CANADIEN = /\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i
+const NUMERO_DE_TAXE = /\b(RT|TQ)\s?0001\b/i
+
 // Un symbole de devise annonce un montant : il en touche un, avant ou apres. L'exiger ecarte
 // le « € » qu'un ocr tire d'un bord de papier et le « £ » qu'il tire d'un taux de taxe, qui
 // suffisaient a faire passer un recu canadien pour un recu europeen.
@@ -47,9 +55,16 @@ function contreUnMontant(texte: string, symbole: string): boolean {
   return false
 }
 
+function contexteCanadien(texte: string): boolean {
+  return (
+    TAXE_CANADIENNE.test(texte) || CODE_POSTAL_CANADIEN.test(texte) || NUMERO_DE_TAXE.test(texte)
+  )
+}
+
 export function reconnaitreDevise(lignes: readonly BlocTexte[][]): Facture['devise'] {
   let parSymbole: Facture['devise'] = null
   let parDollar: Facture['devise'] = null
+  let parContexte: Facture['devise'] = null
 
   for (const ligne of lignes) {
     const texte = texteDe(ligne)
@@ -69,7 +84,14 @@ export function reconnaitreDevise(lignes: readonly BlocTexte[][]): Facture['devi
     if (parDollar === null && contreUnMontant(texte, DOLLAR)) {
       parDollar = { valeur: DEVISE.cad, confiance: confianceDe(ligne) * FACTEUR_DOLLAR_SEUL }
     }
+
+    if (parContexte === null && contexteCanadien(texte)) {
+      parContexte = {
+        valeur: DEVISE.cad,
+        confiance: confianceDe(ligne) * FACTEUR_CONTEXTE_CANADIEN,
+      }
+    }
   }
 
-  return parSymbole ?? parDollar
+  return parSymbole ?? parDollar ?? parContexte
 }

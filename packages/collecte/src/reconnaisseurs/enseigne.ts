@@ -97,6 +97,23 @@ export function sousCategoriesDe(texte: string): SousCategorie[] {
   return []
 }
 
+// Le mot-cle connu le plus long que le texte imprime, ou null : meme recherche que
+// sousCategoriesDe, mais c'est le nom trouve qui compte, pas ce qu'il designe.
+export function enseigneDe(texte: string): string | null {
+  const mots = recoller(decoller(decouper(texte)))
+  const normalise = normaliser(texte)
+  for (let taille = Math.min(FENETRE_MAXIMUM, mots.length); taille >= 1; taille--) {
+    for (let debut = 0; debut + taille <= mots.length; debut++) {
+      const fenetre = mots.slice(debut, debut + taille).join(' ')
+      if (INDEX.has(fenetre)) return fenetre
+    }
+    for (const [motCle, cle] of ESPERLUETTES) {
+      if (cle.taille === taille && cle.motif.test(normalise)) return motCle
+    }
+  }
+  return null
+}
+
 // Le nom du site imprime sur la ligne (« WWW.UNIQLO.COM » : uniqlo), ou null.
 export function siteDe(texte: string): string | null {
   const nom = normaliser(texte).match(SITE)?.[1]
